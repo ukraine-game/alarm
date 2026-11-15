@@ -5,20 +5,23 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Мапа тривог">
 <meta name="theme-color" content="#10141c"><meta name="format-detection" content="telephone=no">
 <title>Мапа тривог — симулятор</title>
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png"><link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="img/favicon.ico" sizes="any">
 <link rel="shortcut icon" href="img/favicon.ico">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
 <link rel="stylesheet" href="style.css">
 </head><body>
 <div id="ld"><div id="ldm"></div><div class="ldc"><img src="drones/ic_shahed.svg" alt="" class="ldi"><div id="ldt">Зачекайте, триває завантаження ресурсів…</div><div class="ldp"><i id="ldb"></i></div></div></div>
-<header><b>🇺🇦 Мапа тривог</b><span class="tag">СИМУЛЯТОР<span class="w"> · не реальні дані</span></span>
-<span id="cnt"></span><span class="sp"></span><button id="ua" title="Приховати сусідні країни">🇺🇦<span class="w"> Лише Україна</span></button><button id="stb" title="Статистика та перемотування">📊<span class="w"> Статистика</span></button><button id="snd" title="Звук сирени">🔕</button><select id="spd" title="Швидкість часу"></select><button id="adm">🛠 Адмін</button></header>
+<header><b>🇺🇦<span class="w"> Мапа тривог</span></b><span class="tag">СИМУЛЯТОР<span class="w"> · не реальні дані</span></span>
+<span id="cnt"></span><span class="sp"></span><button id="ua" title="Приховати сусідні країни">🇺🇦<span class="w"> Лише Україна</span></button><button id="stb" title="Статистика та перемотування">📊<span class="w"> Статистика</span></button><button id="snd" title="Звук сирени">🔕</button><select id="spd" title="Швидкість часу"></select><button id="adm">🛠<span class="w"> Адмін</span></button></header>
 <div id="map"></div>
 <div id="thr" title="Загрози — натисніть: де тривога, рівень, тривалість"><span class="tt">Загрози:</span><img src="img/icon_air.svg" alt="" class="ti"><b id="tn">0</b></div>
 <div id="tp" hidden><div class="tph"><b>🚨 Загрози й тривоги</b><button id="tpx">✖</button></div><div id="tl"></div><div class="th2">Де тривога <small>(торкніться рядка — підсвітити загрози та їхній шлях)</small></div><div id="tpl"></div></div>
-<div id="qb"><div id="qt"></div><div class="qs"><button id="qn" title="Скільки цілей за раз">×1</button><button id="qm" title="Складний маршрут (кілька точок)">〰</button><button id="qx" hidden>✖</button></div></div>
+<div id="fp" hidden></div>
+<div id="qb"><div id="qt"></div><div class="qs"><button id="qn" title="Скільки цілей за раз">×1</button><button id="qf" title="Побудова табуну">▤</button><button id="qm" title="Складний маршрут (кілька точок)">〰</button><button id="qx" hidden>✖</button></div></div>
 <div id="al" hidden><div id="alh"></div><div id="tgk"></div></div>
 <aside id="panel" hidden>
+<div class="row pc"><button id="pcl">✖ Закрити панель</button></div>
 <div class="row"><button data-a="as" id="asb">🚨 АС Тривог</button><button data-a="clr">🟢 Відбій усім</button><button data-a="del">🗑 Очистити об'єкти</button></div>
 <details id="asd"><summary>⚙ Налаштування АС (радіус і колір тривоги)</summary><div id="ass"></div><small>АС Тривог сама вмикає 🟡/🔴 в районах, куди потрапляє зона цілі (радіус довкола неї та попереду по маршруту), і знімає відбій через ~3 хв після виходу цілі із зони. Ручні зміни АС не чіпає.</small></details>
 <p><small>ПКМ по карті (на телефоні — довге натискання) → «Створити об'єкт», далі клікайте по карті — кожен клік додає точку маршруту. Клік по району/області — тривога. Клік по об'єкту — змінити маршрут.</small></p>
@@ -34,6 +37,7 @@
 <h4 id="dh">Створити об'єкт</h4>
 <label>Тип<select id="t"></select></label>
 <small>🎯 Клікайте по карті — кожна точка додається до маршруту, об'єкт пролетить через усі по черзі (можна ламаним маршрутом чи зиґзаґом). ПКМ — прибрати останню точку.</small>
+<div class="row" id="fgr"><label style="flex:1">Кількість<select id="fn"></select></label><label style="flex:2">Табун<select id="fs"></select></label><div id="fpv"></div></div>
 <label id="stl">Старт через (хв, 0 — одразу)<input id="st" type="number" min="0" value="0"></label>
 <small id="info"></small>
 <div class="row"><button id="pk" class="on">🎯 Ставити точки</button><button id="un">↩ Назад</button><button id="zz">〰 Зиґзаґ</button><button id="rk">🧹 Очистити</button></div>

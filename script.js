@@ -135,8 +135,8 @@ const CT=`Київ|50.45|30.52|5
 Феодосія|45.03|35.38|7
 Ізмаїл|45.35|28.84|7
 Білгород-Дністровський|46.19|30.35|7`.split('\n').map(r=>{const a=r.split('|');return{n:a[0],la:+a[1],ln:+a[2],z:+a[3]}});
-function lab(){CL.clearLayers();const z=map.getZoom();const B=map.getBounds().pad(.25);CT.forEach(c=>{if(z>=c.z&&B.contains([c.la,c.ln]))L.marker([c.la,c.ln],{interactive:false,keyboard:false,zIndexOffset:-500,icon:L.divIcon({className:'',iconSize:[0,0],html:`<span class="cl">${c.n}</span>`})}).addTo(CL)})}
-map.on('zoomend moveend',lab);lab();
+function lab(){CL.clearLayers();const z=map.getZoom();const B=map.getBounds().pad(.25);let cc=0;CT.forEach(c=>{if(cc<(MOB?70:160)&&z>=c.z&&B.contains([c.la,c.ln])&&++cc)L.marker([c.la,c.ln],{interactive:false,keyboard:false,zIndexOffset:-500,icon:L.divIcon({className:'',iconSize:[0,0],html:`<span class="cl">${c.n}</span>`})}).addTo(CL)})}
+let labT;map.on('zoomend moveend',()=>{clearTimeout(labT);labT=setTimeout(lab,MOB?220:60)});lab();
 var MK;
 const MR=L.canvas({pane:'mask',padding:0.1});
 function setMask(rings){if(MK)map.removeLayer(MK);MK=L.polygon([[[-85,-180],[-85,180],[85,180],[85,-180]]].concat(rings),{pane:'mask',interactive:false,fillColor:BG[bk],fillOpacity:1,color:'#8aa0c8',weight:1.5,fillRule:'evenodd',renderer:MR,smoothFactor:2});if(only)MK.addTo(map)}
@@ -323,28 +323,40 @@ function asTick(){if(!AS.on)return;if(!obs.length&&!R.some(u=>u.st&&u.a)&&!OB.so
  obs.forEach(x=>{if(x.sIn>0)return;const c=AS.c[x.t],S=samples(x,c.r);U.forEach(u=>{if(S.some(s=>hit(u,s,c.r)))need.set(u,Math.max(need.get(u)||0,c.l))})});
  let ch=0,red=0;
  U.forEach(u=>{const n=need.get(u)||0;let v=null;
-  if(n){u.free=0;u.dz=0;if(u.st<n||(u.a&&u.st>n))v=n}else if(u.st&&u.a){u.free=(u.free||0)+scale;if(u.free>=HOLD/2&&!u.dz){u.dz=1;typeof tgU==='function'&&tgU(u,'clr')}if(u.free>=HOLD)v=0}
+  if(n){u.free=0;u.dz=0;if(u.st<n||(u.a&&u.st>n))v=n}else if(u.st&&u.a){u.free=(u.free||0)+scale*(MOB?2:1);if(u.free>=HOLD/2&&!u.dz){u.dz=1;typeof tgU==='function'&&tgU(u,'clr')}if(u.free>=HOLD)v=0}
   if(v!==null){autoSet(u,v);ch++;if(v==2)red=1}});
  if(ch){save();ui();if(red)siren()}}
-setInterval(asTick,1000);
+setInterval(asTick,MOB?2000:1000);
 $('ass').innerHTML=Object.entries(T).map(([k,v])=>`<div class="r"><span><img class="mi" src="${v.i}" alt="">${v.n}</span><span><input data-k="${k}" data-f="r" type="number" min="1" max="1000" value="${AS.c[k].r}" style="width:62px"> км <select data-k="${k}" data-f="l"><option value="1"${AS.c[k].l==1?' selected':''}>🟡</option><option value="2"${AS.c[k].l==2?' selected':''}>🔴</option></select></span></div>`).join('');
 $('ass').onchange=e=>{const t=e.target,k=t.dataset.k;if(!k)return;AS.c[k][t.dataset.f]=Math.max(1,+t.value||1);asSave();obs.forEach(draw)};
 function asBtn(){$('asb').classList.toggle('on',AS.on);$('asb').textContent=AS.on?'🚨 АС Тривог: УВІМК':'🚨 АС Тривог'}asBtn();
 
 // ---- створення / редагування маршруту (точки на карті)
 let RT={o:null,p:[],x:null};const rg=L.layerGroup().addTo(map);
+const FM=[['rows','▤','Рядами'],['wedge','▽','Клином'],['line','═','Шеренгою'],['col','║','Колоною'],['swarm','✺','Роєм'],['wide','⁘','Розсипом']];
+function fmOff(n,f){const O=[],LA=0.9,BK=1.3;
+ if(f==='rows'){let rs=n<=3?[n]:n===4?[2,2]:n===5?[2,3]:[],m=n;if(!rs.length)while(m>0){rs.push(Math.min(3,m));m-=3}rs.forEach((k,r)=>{for(let i=0;i<k;i++)O.push([-r*BK,(i-(k-1)/2)*LA])})}
+ else if(f==='wedge'){for(let i=0,r=0;i<n;r++){const k=Math.min(r+1,n-i);for(let j=0;j<k;j++,i++)O.push([-r*BK,(j-(k-1)/2)*LA*1.2])}}
+ else if(f==='line'){for(let i=0;i<n;i++)O.push([0,(i-(n-1)/2)*LA*1.3])}
+ else if(f==='col'){for(let i=0;i<n;i++)O.push([-i*BK,0])}
+ else{const R=f==='swarm'?2+n*0.4:Math.min(40,6+n*2.5),r0=f==='swarm'?1:8;for(let i=0;i<n;i++){const a=Math.random()*6.283,r=i?r0+Math.random()*R:0;O.push([r*Math.cos(a),r*Math.sin(a)])}}
+ return O}
+function spawnG(t,s,route,n,f,dl){const P=[s].concat(route),b0=dist(P[0],P[1])<0.5?0:brg(P[0],P[1]),bf=b0*rad,sn=Math.sin(bf),cs=Math.cos(bf),cl=Math.cos(s[0]*rad),conv=f!=='wide';
+ fmOff(n,f).forEach((o,i)=>{const dN=(o[0]*cs-o[1]*sn)/111.32,dE=(o[0]*sn+o[1]*cs)/(111.32*cl),sh=q=>[q[0]+dN,q[1]+dE],a=sh(s),
+  R=route.map((q,k)=>(k<route.length-1||!conv)?sh(q):dest(q[0],q[1],Math.random()*360,i?0.2+Math.random()*0.7:0));
+  add(t,L.latLng(a[0],a[1]),R,dl||0);obs[obs.length-1].sf=conv?1:0.92+Math.random()*0.16})}
 function setRouteOn(v){routeOn=v;$('pk').classList.toggle('on',v);mc.style.cursor=v?'crosshair':''}
-function prev(){const t=T[$('t').value],P=[[RT.o.lat,RT.o.lng]].concat(RT.p);pl.setLatLngs(P);pl.setStyle({color:t.c});rg.clearLayers();
+function prev(){typeof fpv==='function'&&fpv();const t=T[$('t').value],P=[[RT.o.lat,RT.o.lng]].concat(RT.p);pl.setLatLngs(P);pl.setStyle({color:t.c});rg.clearLayers();
  L.circleMarker(P[0],{radius:6,color:'#fff',fillColor:'#2e7d32',fillOpacity:1,weight:2,interactive:false}).addTo(rg);
  RT.p.forEach((q,i)=>L.circleMarker(q,{radius:5,color:t.c,fillColor:'#fff',fillOpacity:1,weight:2,interactive:false}).bindTooltip(String(i+1),{permanent:true,direction:'top',offset:[0,-4],className:'wpt'}).addTo(rg));
  let km=0;for(let i=1;i<P.length;i++)km+=dist(P[i-1],P[i]);
- $('info').textContent=RT.p.length?`Точок: ${RT.p.length} · довжина ≈ ${Math.round(km)} км · політ ≈ ${Math.max(1,Math.round(km/t.s*60))} хв (${t.s} км/год)`:'Клікайте по карті, щоб поставити першу точку маршруту';$('ok').disabled=!RT.p.length}
-function openNew(ll,x){RT={o:ll,p:x?x.route.map(r=>r.slice()):[],x:x||null};lp=Date.now();if(x)$('t').value=x.t;$('t').disabled=!!x;$('stl').hidden=!!x;
+ $('info').textContent=RT.p.length?`${+$('fn').value>1?'×'+$('fn').value+' · ':''}Точок: ${RT.p.length} · довжина ≈ ${Math.round(km)} км · політ ≈ ${Math.max(1,Math.round(km/t.s*60))} хв (${t.s} км/год)`:'Клікайте по карті, щоб поставити першу точку маршруту';$('ok').disabled=!RT.p.length}
+function openNew(ll,x){RT={o:ll,p:x?x.route.map(r=>r.slice()):[],x:x||null,n:x?1:(window.QN||1)};window.QN=1;lp=Date.now();if(x)$('t').value=x.t;$('t').disabled=!!x;$('stl').hidden=!!x;$('fgr').hidden=!!x;if(!x){$('fn').value=Q.n;$('fs').value=Q.f}
  $('dh').textContent=x?'Маршрут об\'єкта':'Створити об\'єкт';$('ok').textContent=x?'Зберегти':'Запустити';$('dlg').hidden=false;document.body.classList.add('dl');setRouteOn(true);prev()}
 function closeNew(){$('dlg').hidden=true;document.body.classList.remove('dl');setRouteOn(false);pl.setLatLngs([]);rg.clearLayers()}
 $('t').innerHTML=Object.entries(T).map(([k,v])=>`<option value="${k}">${v.n}</option>`).join('');
 $('t').onchange=prev;$('no').onclick=closeNew;
-$('ok').onclick=()=>{if(!RT.p.length)return;if(RT.x){RT.x.route=RT.p.map(r=>r.slice());draw(RT.x);save();ui()}else add($('t').value,RT.o,RT.p,Math.max(0,+$('st').value||0));closeNew()};
+$('ok').onclick=()=>{if(!RT.p.length)return;if(RT.x){RT.x.route=RT.p.map(r=>r.slice());draw(RT.x);save();ui()}else spawnG($('t').value,[RT.o.lat,RT.o.lng],RT.p,+$('fn').value||1,$('fs').value,Math.max(0,+$('st').value||0));closeNew()};
 $('pk').onclick=()=>setRouteOn(!routeOn);
 $('un').onclick=()=>{RT.p.pop();prev()};$('rk').onclick=()=>{RT.p=[];prev()};
 $('zz').onclick=()=>{const n=RT.p.length;if(!n)return say('Спочатку поставте кінцеву точку');const A=n>1?RT.p[n-2]:[RT.o.lat,RT.o.lng],B=RT.p.pop(),len=dist(A,B),b=brg(A,B),amp=Math.min(30,len/6);
@@ -352,22 +364,23 @@ $('zz').onclick=()=>{const n=RT.p.length;if(!n)return say('Спочатку по
  const k=Math.max(3,Math.min(8,Math.round(len/40)));for(let i=1;i<k;i++){const m=dest(A[0],A[1],b,len*i/k);RT.p.push(dest(m[0],m[1],b+(i%2?90:-90),amp))}RT.p.push(B);prev()}
 
 // ---- швидкий запуск (панель знизу): тип → старт → кінцева точка, і так по колу
-let Q={t:'shahed',n:1,m:0,on:0,s:null};try{const q=localStorage.getItem('alarmq');if(q&&T[q])Q.t=q}catch(e){}
+let Q={t:'shahed',n:1,m:0,on:0,s:null,f:'rows'};try{const f=localStorage.getItem('alarmqf');if(f)Q.f=f}catch(e){}try{const q=localStorage.getItem('alarmq');if(q&&T[q])Q.t=q}catch(e){}
 $('qt').innerHTML=Object.entries(T).map(([k,v])=>`<button data-q="${k}" title="${v.n}"><img src="${v.i}" alt=""><span>${v.g}</span></button>`).join('');
-function qUi(){document.querySelectorAll('#qt button').forEach(b=>b.classList.toggle('on',!!Q.on&&b.dataset.q===Q.t));$('qx').hidden=!Q.on;$('qn').textContent='×'+Q.n;$('qm').classList.toggle('on',!!Q.m)}
+function qUi(){document.querySelectorAll('#qt button').forEach(b=>b.classList.toggle('on',!!Q.on&&b.dataset.q===Q.t));$('qx').hidden=!Q.on;$('qn').textContent='×'+Q.n;$('qf').textContent=(FM.find(a=>a[0]===Q.f)||FM[0])[1];$('qm').classList.toggle('on',!!Q.m)}
 function qMv(e){if(Q.s)pl.setLatLngs([Q.s,[e.latlng.lat,e.latlng.lng]])}
 function qStop(){Q.on=0;Q.s=null;endPick();pl.setLatLngs([]);rg.clearLayers();map.off('mousemove',qMv);qUi()}
 function qGo(){if(!$('dlg').hidden)return;if(brush!==null)setBrush(null);const t=T[Q.t];Q.on=1;Q.s=null;pl.setLatLngs([]);rg.clearLayers();qUi();
  startPick('🛫 '+t.n+': торкніться карти — звідки стартує',a=>{Q.s=[a.lat,a.lng];
-  if(Q.m){Q.on=0;qUi();$('t').value=Q.t;return openNew(a)}
+  if(Q.m){Q.on=0;qUi();$('t').value=Q.t;window.QN=Q.n;return openNew(a)}
   pl.setStyle({color:t.c});pl.setLatLngs([Q.s,Q.s]);rg.clearLayers();L.circleMarker(Q.s,{radius:6,color:'#fff',fillColor:'#2e7d32',fillOpacity:1,weight:2,interactive:false}).addTo(rg);map.on('mousemove',qMv);
   startPick('🎯 Тепер торкніться — куди летить (кінцева точка)',b=>{const s=Q.s,e=[b.lat,b.lng];map.off('mousemove',qMv);
-   if(dist(s,e)>=3){const sp=Math.min(40,6+Q.n*2.5),ep=Math.min(60,10+Q.n*4);for(let i=0;i<Q.n;i++){const p=i?dest(s[0],s[1],Math.random()*360,8+Math.random()*sp):s,q=i?dest(e[0],e[1],Math.random()*360,6+Math.random()*ep):e;add(Q.t,L.latLng(p[0],p[1]),[q],i?Math.random()*0.12:0)}}
+   if(dist(s,e)>=3)spawnG(Q.t,s,[e],Q.n,Q.f,0)
    qGo()},qStop)},qStop)}
 $('qt').onclick=e=>{const b=e.target.closest('button');if(!b)return;const k=b.dataset.q;if(Q.on&&Q.t===k)return qStop();Q.t=k;try{localStorage.setItem('alarmq',k)}catch(x){}if(Q.on)qStop();qGo()};
-$('qn').onclick=()=>{Q.n=Q.n===1?3:Q.n===3?5:Q.n===5?10:1;qUi()};
+$('qn').onclick=()=>{const C=[1,2,3,5,7,10];Q.n=C[(C.indexOf(Q.n)+1)%C.length];qUi()};
+$('qf').onclick=()=>{const i=FM.findIndex(a=>a[0]===Q.f);Q.f=FM[(i+1)%FM.length][0];try{localStorage.setItem('alarmqf',Q.f)}catch(e){}qUi();say('Табун: '+FM.find(a=>a[0]===Q.f)[2]+(Q.f==='rows'?' (3-3-3-1, 2-3, 3)':''))};
 $('qm').onclick=()=>{Q.m=Q.m?0:1;qUi();say(Q.m?'Складний маршрут: після старту відкриється редактор точок':'Швидкий режим: старт → кінцева точка')};
-$('qx').onclick=qStop;qUi();
+$('qx').onclick=qStop;$('fs').innerHTML=FM.map(a=>`<option value="${a[0]}">${a[1]} ${a[2]}</option>`).join('');$('fn').innerHTML=[1,2,3,4,5,6,7,8,9,10].map(v=>`<option>${v}</option>`).join('');$('fn').onchange=$('fs').onchange=prev;qUi();
 
 map.on('click',e=>{$('menu').hidden=true;if(routeOn){if(Date.now()-lp>500){RT.p.push([e.latlng.lat,e.latlng.lng]);prev()}return}if(pick){const f=pick.f;endPick();f(e.latlng)}});
 map.on('movestart',()=>{$('menu').hidden=true});
@@ -441,6 +454,33 @@ dir:[['{t} на {c}.','Напрямок — {c}. Увага.','{t}: курс н�
 near:[['{t} на підльоті до {c}.','До {c} — {t}, підліт.','На підльоті до міста: {c}.'],['На підльоті до міста! {c} 🙏','🔥 {c}, на підльоті {t}','{c}, на підльоті!!'],['Ціль наближається до м. {c}.','{t} на підльоті до {c}. Небезпека.','Підліт до {c}. Залишайтесь в укритті.'],['{c} УКРИТТЯ!','⚠️ {c}, на підльоті! Усі в укриття!!!','Знижається, усі в укриття!!!']],
 clr:[['Дорозвідка {r} — чисто, очікуємо відбій.','Дорозвідка: {r}, нових цілей не фіксуємо.','Дорозвідка. Тихо.'],['🟢 Дорозвідка {r}, схоже на відбій','Дорозвідка — тихо. Скоро відбій 🙏','Дорозвідка: чисто 👌'],['Ситуація {r} стабілізується. Дорозвідка триває.','Дорозвідка: нових цілей {r} не виявлено. Очікуйте відбій.','Триває дорозвідка. Відбою ще немає.'],['Дорозвідка. Поки чисто, але з укриття не виходьте!','❗️Дорозвідка {r}. Не поспішайте виходити.','Дорозвідка… чекаємо відбій!!']],
 off:[['Відбій тривоги {r}.','Відбій {r}.','🟢 Відбій.'],['🟢 Відбій {r}! Дякуємо ПС 🙏','Відбій! {r} 🟢','🟢🟢 Відбій!!'],['Повітряну тривогу {r} скасовано.','Відбій повітряної тривоги {r}.','Відбій. Дякуємо за уважність.'],['🟢 Відбій {r}!','✅ Відбій тривоги {r}. Будьте обережні','Відбій! Але не розслабляйтесь']]};
+const ADJ={};`Тернопільська:Львівська,Рівненська,Хмельницька,Івано-Франківська,Чернівецька
+Львівська:Волинська,Рівненська,Тернопільська,Івано-Франківська,Закарпатська
+Івано-Франківська:Львівська,Тернопільська,Чернівецька,Закарпатська
+Волинська:Львівська,Рівненська
+Рівненська:Волинська,Львівська,Тернопільська,Хмельницька,Житомирська
+Закарпатська:Львівська,Івано-Франківська
+Чернівецька:Івано-Франківська,Тернопільська,Хмельницька,Вінницька
+Хмельницька:Тернопільська,Рівненська,Житомирська,Вінницька,Чернівецька
+Харківська:Сумська,Полтавська,Дніпропетровська,Донецька,Луганська
+Донецька:Харківська,Луганська,Дніпропетровська,Запорізька
+Луганська:Харківська,Донецька
+Дніпропетровська:Харківська,Полтавська,Кіровоградська,Миколаївська,Херсонська,Запорізька,Донецька
+Запорізька:Донецька,Дніпропетровська,Херсонська,АР Крим
+Сумська:Чернігівська,Полтавська,Харківська
+Полтавська:Сумська,Харківська,Дніпропетровська,Кіровоградська,Черкаська,Чернігівська,Київська
+Одеська:Миколаївська,Вінницька,Кіровоградська
+Миколаївська:Одеська,Херсонська,Кіровоградська,Дніпропетровська
+Херсонська:Миколаївська,Запорізька,Дніпропетровська,АР Крим`.split('\n').forEach(l=>{const[a,b]=l.split(':');ADJ[a]=b.split(',')});
+function chA(ch){if(!ch[3])return null;if(!ch._a){const z=ch[3].split(' '),S=new Set(z);z.forEach(n=>(ADJ[n]||[]).forEach(m=>S.add(m)));ch._a=S}return ch._a}
+const cityO=c=>{if(c.o===undefined){const o=obAt(L.latLng(c.la,c.ln),true);c.o=o?o.n:''}return c.o};
+function chOk(ch,f,x){const A=chA(ch);if(!A)return true;let ok=!!(f.o&&A.has(f.o.n));
+ if(!ok&&x){const o=obAt(L.latLng(along(x,Math.min(remKm(x),150))),true);ok=!!(o&&ch[3].split(' ').includes(o.n))}
+ if(!ok)return false;
+ if(f.k==='dir'||f.k==='near'){const c=CT.find(z=>z.n===f.c);if(!c||!A.has(cityO(c)))return false}
+ return true}
+function loc(f,ch){const A=chA(ch);if(!A||!f.c||!f.q)return f;const c=CT.find(z=>z.n===f.c);if(c&&A.has(cityO(c)))return f;
+ let b=null,bd=200;CT.forEach(z=>{if(z.z<=8){const d=dist([z.la,z.ln],f.q);if(d<bd&&A.has(cityO(z))){bd=d;b=z}}});return Object.assign({},f,{c:b?b.n:(f.o?oname(f.o):'')})}
 const lcN=o=>o.n==='Київ'?'м. Києві':o.n==='АР Крим'?'Криму':o.n==='Севастополь'?'Севастополі':o.n.replace(/а$/,'ій')+' області',
  gnN=o=>o.n==='Київ'?'м. Києва':o.n==='АР Крим'?'АР Крим':o.n==='Севастополь'?'Севастополя':o.n.replace(/а$/,'ої')+' області';
 function alVis(){$('alh').hidden=!ah;$('al').hidden=!ah&&!TG.length}
@@ -448,8 +488,8 @@ function along(x,d){let a=x.p;for(const q of x.route){const sd=dist(a,q);if(sd>=
 function facts(x,k,cn){const t=T[x.t],o=obAt(L.latLng(x.p),true),q=along(x,Math.min(remKm(x),90)),c=CT.reduce((a,b)=>dist([b.la,b.ln],q)<dist([a.la,a.ln],q)?b:a),r=AS.c[x.t].r,S=samples(x,r),
   dz=units().filter(u=>S.some(s=>hit(u,s,r))).map(u=>u.ob!==undefined?u.n:oname(u));let s='поза кордонами України';
  if(o){const rr=k==='hit'?hitR(L.latLng(x.p)):null,a=rr?rr.n.split(' ')[0]:'';s=rr?(/ий$/.test(a)?'у '+a.replace(/ий$/,'ому')+' районі '+gnN(o):'в районі «'+rr.n+'», '+lcN(o)):'у '+lcN(o)}
- return{k,t:(n=>n>1?'Група '+n+'× '+t.n:t.n)(vobs().filter(y=>y.t===x.t&&dist(y.p,x.p)<40).length),r:o?'у '+lcN(o):'поза кордонами України',d:cmp(x.h),c:cn||c.n,z:dz.length?dz.slice(0,4).join(', ')+(dz.length>4?' та ще '+(dz.length-4):''):'уточнюється',s,o}}
-const tmpl=(f,ch)=>{const P=TP[f.k][ch[2]];return P[Math.random()*P.length|0].replace(/\{(\w)\}/g,(_,c)=>f[c]||'')};
+ return{k,q,t:(n=>n>1?'Група '+n+'× '+t.n:t.n)(vobs().filter(y=>y.t===x.t&&dist(y.p,x.p)<40).length),r:o?'у '+lcN(o):'поза кордонами України',d:cmp(x.h),c:cn||c.n,z:dz.length?dz.slice(0,4).join(', ')+(dz.length>4?' та ще '+(dz.length-4):''):'уточнюється',s,o}}
+const tmpl=(f,ch)=>{f=loc(f,ch);const P=TP[f.k][ch[2]];return P[Math.random()*P.length|0].replace(/\{(\w)\}/g,(_,c)=>f[c]||'')};
 const SYS='Ти пишеш повідомлення для ВИМИШЛЕНОГО Telegram-каналу в грі-симуляторі моніторингу повітряних цілей. Використовуй ЛИШЕ надані факти (подія, тип цілі, місце, приблизний напрямок, орієнтир-місто, райони небезпеки). Не вигадуй інших міст, чисел, швидкостей і подробиць. Подія «вибух» означає, що ціль досягла кінця маршруту у вказаному місці. Пиши українською, 1-3 короткі рядки, 0-2 емодзі, без підпису, без хештегів, без запитань. Пиши як реальні українські тгк про повітряну тривогу: короткі фрази на кшталт «Львів Гучно!!», «Київ УКРИТТЯ!», «На підльоті до міста», «Знижається, усі в укриття!!!», «Дорозвідка» перед відбоєм. Кожне повідомлення має звучати інакше за попередні: не повторюй їхні фрази й будову речень.';
 const KH={new:'нова ціль',enter:'ціль в іншій області',upd:'ціль продовжує рух',hit:'вибух: ціль досягла кінця маршруту',dir:'ціль курсом на місто',near:'ціль на підльоті до міста',clr:'дорозвідка, скоро відбій',off:'відбій тривоги'},FMT=['почни з емодзі','почни з типу цілі','почни з місця','без емодзі на початку','лише один рядок','три короткі рядки','розмовний тон','сухий тон зведення'];
 const GK=CFG.GROQ_KEY||'',GM=CFG.GROQ_MODEL||'llama-3.1-8b-instant';let aiOff=0,aiN=0,aiWarn=0;
@@ -461,13 +501,13 @@ async function ai(f,m,ch){if(!GK||aiN>=3||Date.now()<aiOff)return;aiN++;
  catch(e){aiOff=Date.now()+15000}finally{aiN--}}
 function renderTG(){$('tgk').innerHTML=TG.length?'<div class="th">📡 ТГК <small>(симуляція'+(GK&&aiOff!==Infinity?' · ШІ':'')+')</small></div>'+TG.slice(0,12).map(m=>`<div class="tm"><b>${esc(m.ch)}</b> <small>${m.t}</small><div>${esc(m.txt)}</div></div>`).join(''):'';alVis()}
 const PQ=[];function post(f,ch){PQ.push([f,ch]);if(PQ.length>5)PQ.shift()}setInterval(()=>{const q=PQ.shift();if(q)post1(q[0],q[1])},1300);
-function post1(f,ch){const m={ch:ch[0],t:tm(),txt:tmpl(f,ch)};TG.unshift(m);if(TG.length>40)TG.pop();renderTG();ai(f,m,ch)}
+function post1(f,ch){const m={ch:ch[0],t:tm(),txt:tmpl(f,ch)};TG.unshift(m);if(TG.length>40)TG.pop();renderTG();ai(loc(f,ch),m,ch)}
 // про вибух пишуть 2-3 різні канали з невеликою затримкою; канали, що писали щойно, йдуть у кінець черги
-const TGC={};function tgm(x,k,cn){const f=facts(x,k,cn),n=k==='hit'?2+(Math.random()*2|0):1,rec=TG.slice(0,4).map(m=>m.ch),cs=CH.slice().sort((a,b)=>(rec.includes(a[0])-rec.includes(b[0]))*2-((a[3]&&f.o&&a[3].includes(f.o.n))-(b[3]&&f.o&&b[3].includes(f.o.n)))*3+Math.random()-.5).slice(0,n);
+const TGC={};function tgm(x,k,cn){const f=facts(x,k,cn),n=k==='hit'?2+(Math.random()*2|0):1,rec=TG.slice(0,4).map(m=>m.ch),cs=CH.filter(ch=>chOk(ch,f,x)).sort((a,b)=>(rec.includes(a[0])-rec.includes(b[0]))*2-((a[3]&&f.o&&a[3].includes(f.o.n))-(b[3]&&f.o&&b[3].includes(f.o.n)))*3+Math.random()-.5).slice(0,n);
  const ky=x.t+'|'+(f.o?f.o.i:-1)+'|'+k+'|'+(cn||''),cd=k==='hit'?5000:k==='upd'?40000:20000,ok=!(TGC[ky]&&Date.now()-TGC[ky]<cd);if(ok)TGC[ky]=Date.now();
  if(ok)cs.forEach((ch,i)=>i?setTimeout(()=>post(f,ch),1500+Math.random()*7000):post(f,ch));
  if(f.o&&{new:1,enter:1,upd:1,hit:1}[k]){const dd=cmp(x.h);logEv(f.o,null,'x',{new:`🛩 ${f.t}: зафіксовано, курс на ${dd}`,enter:`➡️ ${f.t} увійшов в область, курс на ${dd}`,upd:`🔄 ${f.t}: у межах області, курс на ${dd}`,hit:`💥 ${f.t}: вибух — ${f.s}`}[k],'ціль')}}
-setInterval(()=>{obs.forEach(x=>{if(x.sIn>0)return;if(x.ann!==undefined&&x.cp&&dist(x.cp,x.p)<3){x.nt-=scale;if(x.nt<=0){x.nt=900*(0.7+Math.random()*0.6);tgm(x,'upd')}return}x.cp=x.p.slice();if(obs.length<60){const nc=(q,d,zz)=>{let b=null,bd=d;CT.forEach(c=>{if(c.z<=zz){const m=dist([c.la,c.ln],q);if(m<bd){bd=m;b=c}}});return b},cn=nc(x.p,45,6),cd=nc(along(x,80),22,8);if(cn&&x.nr!==cn.n){x.nr=cn.n;tgm(x,'near',cn.n)}else if(cd&&x.lc!==cd.n){x.lc=cd.n;tgm(x,'dir',cd.n)}}const o=obAt(L.latLng(x.p),true),id=o?o.i:-1;
+setInterval(()=>{obs.forEach(x=>{if(x.sIn>0)return;if(x.ann!==undefined&&x.cp&&dist(x.cp,x.p)<3){x.nt-=scale;if(x.nt<=0){x.nt=900*(0.7+Math.random()*0.6);tgm(x,'upd')}return}x.cp=x.p.slice();if(obs.length<80&&((x.cq=(x.cq||0)+1)%3===0)){const nc=(q,d,zz)=>{let b=null,bd=d;CT.forEach(c=>{if(c.z<=zz){const m=dist([c.la,c.ln],q);if(m<bd){bd=m;b=c}}});return b},cn=nc(x.p,45,6),cd=nc(along(x,80),22,8);if(cn&&x.nr!==cn.n){x.nr=cn.n;tgm(x,'near',cn.n)}else if(cd&&x.lc!==cd.n){x.lc=cd.n;tgm(x,'dir',cd.n)}}const o=obAt(L.latLng(x.p),true),id=o?o.i:-1;
  if(x.ann===undefined){x.ann=1;x.ob=id;x.nt=900*(0.7+Math.random()*0.6);tgm(x,'new')}
  else if(id!==x.ob){x.ob=id;x.nt=900*(0.7+Math.random()*0.6);if(id>=0)tgm(x,'enter')}
  else{x.nt-=scale;if(x.nt<=0){x.nt=900*(0.7+Math.random()*0.6);tgm(x,'upd')}}})},1000);

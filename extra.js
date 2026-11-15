@@ -1,5 +1,29 @@
 'use strict';
 // ===== v4: міста, ТГК-стрічка, статистика-перемотка, екран завантаження =====
+
+// ---- v4.4: підписи населених пунктів — свої + підвантаження з OpenStreetMap (Overpass) для поточного екрана
+const PTD=new Map(),OV=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://overpass.private.coffee/api/interpreter'],PK={city:7,town:9,village:11,hamlet:12.5},PQ2=[],PBAD=new Map(),PINF=new Set();let ovI=0,ovBusy=0,CTL=-1,CTN=new Map(),plSv=0,plT=0;
+try{(JSON.parse(localStorage.getItem('alarmpl1')||'[]')).forEach(([k,a])=>PTD.set(k,a))}catch(x){}
+const plTier=z=>z>=12?['b',.25,1,1]:z>=11?['v',.5,1,0]:['a',.5,0,0];
+function plSave(){clearTimeout(plSv);plSv=setTimeout(()=>{try{localStorage.setItem('alarmpl1',JSON.stringify([...PTD].slice(-120)))}catch(x){}},3000)}
+async function ovFetch(q){for(let t=0;t<OV.length;t++){const u=OV[(ovI+t)%OV.length],c=new AbortController(),to=setTimeout(()=>c.abort(),15000);try{const r=await fetch(u+'?data='+encodeURIComponent(q),{signal:c.signal});clearTimeout(to);if(!r.ok)throw 0;const j=await r.json();ovI=(ovI+t)%OV.length;return j.elements||[]}catch(x){clearTimeout(to)}}return null}
+async function plPump(){while(ovBusy<2&&PQ2.length){const j=PQ2.shift();ovBusy++;(async()=>{const ty=['city','town'].concat(j.v?['village']:[],j.h?['hamlet']:[]).join('|'),
+ r=await ovFetch(`[out:json][timeout:20];node["place"~"^(${ty})$"](${j.s},${j.w},${j.n},${j.e});out 700;`);PINF.delete(j.k);
+ if(r){PTD.set(j.k,r.filter(p=>p.tags&&(p.tags['name:uk']||p.tags.name)).map(p=>[p.tags['name:uk']||p.tags.name,+p.lat.toFixed(4),+p.lon.toFixed(4),PK[p.tags.place]||12.5]));plSave();lab()}else PBAD.set(j.k,Date.now());ovBusy--;plPump()})()}}
+function plLoad(){if(document.hidden)return;const z=map.getZoom();if(z<9)return;const[pre,sz,v,h]=plTier(z),B=map.getBounds().pad(.1);let n=0;
+ for(let i=Math.floor(B.getSouth()/sz);i<=Math.floor(B.getNorth()/sz)&&n<8;i++)for(let k=Math.floor(B.getWest()/sz);k<=Math.floor(B.getEast()/sz)&&n<8;k++){const key=pre+':'+i+':'+k;
+  if(PTD.has(key)||PINF.has(key)||(PBAD.get(key)||0)>Date.now()-60000)continue;PINF.add(key);n++;PQ2.push({k:key,s:i*sz,w:k*sz,n:(i+1)*sz,e:(k+1)*sz,v,h})}
+ plPump()}
+function lab(){CL.clearLayers();const z=map.getZoom(),B=map.getBounds().pad(.2),P=[];
+ if(CT.length!==CTL){CTL=CT.length;CTN=new Map();CT.forEach(c=>{if(!CTN.has(c.n))CTN.set(c.n,[]);CTN.get(c.n).push(c)})}
+ CT.forEach(c=>{if(z>=c.z&&B.contains([c.la,c.ln]))P.push(c)});
+ if(z>=9){const[pre,sz]=plTier(z);for(let i=Math.floor(B.getSouth()/sz);i<=Math.floor(B.getNorth()/sz);i++)for(let k=Math.floor(B.getWest()/sz);k<=Math.floor(B.getEast()/sz);k++){const a=PTD.get(pre+':'+i+':'+k);
+  if(a)a.forEach(p=>{if(z>=p[3]&&B.contains([p[1],p[2]])){const d=CTN.get(p[0]);if(!d||!d.some(c=>Math.abs(c.la-p[1])<.1&&Math.abs(c.ln-p[2])<.15))P.push({n:p[0],la:p[1],ln:p[2],z:p[3]})}})}}
+ P.sort((a,b)=>a.z-b.z);const placed=[],lim=MOB?60:140;let cc=0;
+ for(const c of P){if(cc>=lim)break;const pt=map.latLngToContainerPoint([c.la,c.ln]),w=c.n.length*6.5+8,r=[pt.x-w/2,pt.y-8,pt.x+w/2,pt.y+8];
+  if(placed.some(q=>r[0]<q[2]&&r[2]>q[0]&&r[1]<q[3]&&r[3]>q[1]))continue;placed.push(r);cc++;
+  L.marker([c.la,c.ln],{interactive:false,keyboard:false,zIndexOffset:-500,icon:L.divIcon({className:'',iconSize:[0,0],html:`<span class="cl${c.z>=11?' sm':''}">${esc(c.n)}</span>`})}).addTo(CL)}}
+map.on('moveend zoomend',()=>{clearTimeout(plT);plT=setTimeout(plLoad,MOB?500:350)});setTimeout(plLoad,1500);
 `Берегове|48.20|22.64|8
 Хуст|48.17|23.30|8
 Тячів|48.01|23.57|9
@@ -165,7 +189,7 @@ function renderTG(){if(!TG.length){$('tgk').innerHTML='';alVis();return}
 $('al').addEventListener('click',e=>{if(e.target.closest('#tgh')){tgOpen=!tgOpen;unread=0;ALx.classList.toggle('open',tgOpen);renderTG()}});
 function tgU(u,k){const o=u.ob!==undefined?OB[u.ob]:u,ky='u'+o.i+k;if(TGC[ky]&&Date.now()-TGC[ky]<30000)return;TGC[ky]=Date.now();
  const f={k,t:'',r:'у '+lcN(o),d:'',c:'',z:'',s:'',o},rec=TG.slice(0,4).map(m=>m.ch);
- CH.slice().sort((a,b)=>(rec.includes(a[0])-rec.includes(b[0]))*2-((a[3]&&a[3].includes(o.n))-(b[3]&&b[3].includes(o.n)))*3+Math.random()-.5).slice(0,k==='clr'?1:2).forEach((ch,i)=>setTimeout(()=>post(f,ch),i*4000))}
+ CH.filter(ch=>chOk(ch,f,null)).sort((a,b)=>(rec.includes(a[0])-rec.includes(b[0]))*2-((a[3]&&a[3].includes(o.n))-(b[3]&&b[3].includes(o.n)))*3+Math.random()-.5).slice(0,k==='clr'?1:2).forEach((ch,i)=>setTimeout(()=>post(f,ch),i*4000))}
 
 // ---- Статистика: запис польотів і перемотка
 let FL=[];try{const q=JSON.parse(localStorage.getItem('alarmfl1')||'null');if(q){FL=q.f||[];SIMT=Math.max(SIMT,q.s||0)}}catch(e){}
@@ -179,13 +203,13 @@ const hms=ms=>{const s=Math.max(0,Math.round(ms/1000));return String(s/3600|0).p
 const fEnd=f=>f.e||Math.round(SIMT),done=()=>FL.filter(f=>f.P.length>1);
 function posAt(f,t){const P=f.P;if(t<P[0][0])return null;let i=0;while(i<P.length-1&&P[i+1][0]<=t)i++;const a=P[i],b=P[i+1];if(!b||t>=fEnd(f)){const z=P[P.length-1];return{p:[z[1],z[2]],i:P.length-1,end:!!f.e&&t>=f.e}}const k=(t-a[0])/(b[0]-a[0]);return{p:[a[1]+(b[1]-a[1])*k,a[2]+(b[2]-a[2])*k],i,end:false}}
 function rpDraw(){RPL.clearLayers();const t=rp.t;let live=0;done().forEach(f=>{const q=posAt(f,t);if(!q)return;const c=T[f.t]?T[f.t].c:'#fff',on=rp.sel===f;
- if(rp.trail||on){const pts=f.P.slice(0,q.i+1).map(p=>[p[1],p[2]]);pts.push(q.p);L.polyline(pts,{renderer:RR,color:on?'#fff':c,weight:on?3:1.5,opacity:on?1:.6,interactive:false}).addTo(RPL)}
+ if((rp.trail&&(!MOB||!q.end))||on){const pts=f.P.slice(0,q.i+1).map(p=>[p[1],p[2]]);pts.push(q.p);L.polyline(pts,{renderer:RR,color:on?'#fff':c,weight:on?3:1.5,opacity:on?1:.6,interactive:false}).addTo(RPL)}
  if(q.end)L.circleMarker(q.p,{renderer:RR,radius:f.h?7:4,color:f.h?'#ff5722':'#9aa4b2',fillColor:f.h?'#ff9800':'#9aa4b2',fillOpacity:.8,weight:1,interactive:false}).addTo(RPL);
  else{live++;L.circleMarker(q.p,{renderer:RR,radius:on?7:5,color:'#fff',weight:1.5,fillColor:c,fillOpacity:1,interactive:false}).addTo(RPL)}});
  const tl=$('stt');if(tl)tl.textContent='T+'+hms(t-rp.t0)+' / '+hms(rp.t1-rp.t0)+' · у польоті: '+live}
 function rpRange(){const F=done();rp.t0=F.length?Math.min(...F.map(f=>f.s)):0;rp.t1=F.length?Math.max(...F.map(fEnd)):0;const r=$('str');if(r){r.min=rp.t0;r.max=Math.max(rp.t1,rp.t0+1);r.step=1000}}
 function rpLoop(n){if(!$('st').hidden){if(rp.play){const dt=Math.min(n-rp.lt,100);rp.t+=dt*rp.sp;if(rp.t>=rp.t1){rp.t=rp.t1;rp.play=0;$('stp').textContent='▶'}$('str')&&($('str').value=rp.t)}
- rp.lt=n;if(n-rp.lr>90||!rp.play){if(n-rp.lr>90){rp.lr=n;rpDraw()}}requestAnimationFrame(rpLoop)}}
+ rp.lt=n;if(n-rp.lr>(MOB?160:90)||!rp.play){if(n-rp.lr>(MOB?160:90)){rp.lr=n;rpDraw()}}requestAnimationFrame(rpLoop)}}
 const dirName=f=>{const a=f.P[0],b=f.P[f.P.length-1];return cmps(brg([b[1],b[2]],[a[1],a[2]]))};
 function stBuild(){rpRange();const F=done(),H=F.filter(f=>f.h),ty={},dr={},ob={};let tot=0;
  F.forEach(f=>{ty[f.t]=(ty[f.t]||0)+1;const a=f.P[0];dr[cmps(brg(UC,[a[1],a[2]]))]=(dr[cmps(brg(UC,[a[1],a[2]]))]||0)+1;tot+=fEnd(f)-f.s});
@@ -212,3 +236,185 @@ $('st').addEventListener('click',e=>{const b=e.target.closest('button,.fl');if(!
  jobs.forEach(p=>Promise.resolve(p).catch(()=>0).then(()=>{n++;bar.style.width=Math.round(n/jobs.length*100)+'%'}));
  const fin=()=>{clearInterval(tick);bar.style.width='100%';ld.classList.add('out');setTimeout(()=>{ld.remove();map.invalidateSize()},800)};
  Promise.race([Promise.all(jobs.map(p=>Promise.resolve(p).catch(()=>0))),new Promise(r=>setTimeout(r,25000))]).then(()=>setTimeout(fin,Math.max(0,1400-(performance.now()-t0))))})();
+
+// ---- v4.1: кнопка закриття адмін-панелі (телефон) + ще міста, смт і села
+$('pcl').onclick=()=>$('adm').click();
+{const have=new Set(CT.map(c=>c.n));`Белз|50.38|24.02|10
+Сокаль|50.48|24.28|9
+Радехів|50.28|24.64|10
+Буськ|49.97|24.62|10
+Кам'янка-Бузька|50.10|24.35|10
+Городок|49.79|23.65|10
+Миколаїв|49.52|24.00|10
+Ходорів|49.40|24.32|10
+Новий Розділ|49.48|24.14|10
+Дашава|49.28|23.97|11
+Устилуг|50.85|24.15|11
+Горохів|50.50|24.76|10
+Рожище|50.91|25.26|10
+Турійськ|51.07|24.52|11
+Маневичі|51.25|25.55|10
+Ратне|51.67|24.54|10
+Шацьк|51.50|23.93|11
+Дубровиця|51.57|26.57|10
+Березне|51.00|26.74|10
+Рокитне|51.50|27.20|10
+Млинів|50.52|25.60|11
+Радивилів|50.13|25.26|10
+Підгайці|49.28|25.12|10
+Монастириська|49.21|25.17|10
+Бучач|49.07|25.39|10
+Заліщики|48.65|25.73|10
+Зборів|49.66|24.71|10
+Підволочиськ|49.53|26.15|10
+Дунаївці|48.89|26.85|10
+Нова Ушиця|48.84|27.27|10
+Деражня|49.27|27.43|10
+Летичів|49.39|27.62|10
+Городок (Хмельн.)|49.15|26.57|10
+Красилів|49.65|26.97|10
+Полонне|50.12|27.51|10
+Свалява|48.55|23.01|9
+Великий Березний|48.89|22.45|10
+Бородянка|50.64|29.92|10
+Макарів|50.46|29.81|10
+Іванків|50.93|29.91|10
+Димер|50.82|30.30|11
+Вишневе|50.39|30.37|10
+Боярка|50.32|30.30|10
+Березань|50.31|31.46|10
+Баришівка|50.36|31.32|10
+Богуслав|49.55|30.88|10
+Тараща|49.56|30.50|10
+Кагарлик|49.85|30.82|10
+Ржищів|49.97|31.05|10
+Бобровиця|50.72|31.38|10
+Ічня|50.85|32.40|10
+Варва|50.49|32.73|10
+Диканька|50.21|34.54|10
+Решетилівка|49.56|34.08|10
+Зіньків|50.20|34.37|10
+Карлівка|49.46|35.13|10
+Гребінка|50.12|32.40|10
+Лохвиця|50.36|33.26|10
+Хорол|49.78|33.27|10
+Бар|49.07|27.68|10
+Ладижин|48.68|29.23|10
+Немирів|48.97|28.84|10
+Липовець|49.21|29.00|10
+Погребище|49.48|29.27|10
+Ямпіль|48.23|28.28|10
+Шаргород|48.74|28.08|10
+Бершадь|48.37|29.52|10
+Крижопіль|48.38|28.86|10
+Корсунь-Шевченківський|49.42|31.26|9
+Городище|49.28|31.45|10
+Тальне|48.88|30.69|10
+Монастирище|48.99|29.80|10
+Чигирин|49.08|32.66|10
+Снігурівка|47.08|32.80|10
+Нова Одеса|47.31|31.79|10
+Казанка|47.84|32.84|10
+Березнегувате|47.31|32.85|10
+Арбузинка|47.89|31.38|11
+Доманівка|47.64|31.39|11
+Веселинове|47.35|31.34|11
+Єланець|47.68|31.84|11
+Братське|47.87|31.65|11
+Чаплинка|46.63|33.54|10
+Асканія-Нова|46.45|33.87|11
+Новотроїцьке|46.35|34.34|10
+Михайлівка|47.26|35.22|10
+Кам'янка-Дніпровська|47.48|34.41|10
+Приазовське|46.73|35.68|10
+Якимівка|46.70|35.17|10
+Золочів (Харк.)|50.28|35.99|10
+Печеніги|49.89|36.95|11
+Борова|49.38|37.62|11
+Великий Бурлук|49.67|37.37|11
+Барвінкове|48.91|37.01|10
+Нова Водолага|49.72|35.86|10
+Кегичівка|49.17|35.69|11
+Зміїв|49.67|36.35|10
+Валки|49.84|35.60|10
+Липова Долина|50.57|33.80|11
+Недригайлів|50.83|33.88|10
+Білопілля|51.15|34.31|10
+Середина-Буда|52.19|34.05|10
+Буринь|51.20|33.85|10
+Кролевець|51.55|33.38|10
+Козелець|50.91|31.11|10
+Сосниця|51.52|32.50|10
+Сновськ|51.82|31.94|10
+Ріпки|51.81|31.08|10
+Городня|51.89|31.60|10
+Любеч|51.69|30.69|11
+Радомишль|50.50|29.23|10
+Брусилів|50.28|29.52|10
+Попільня|49.94|29.43|10
+Андрушівка|49.97|29.67|10
+Чуднів|50.03|28.07|10
+Баранівка|50.30|27.66|10
+Олевськ|51.22|27.65|10
+Народичі|51.20|29.07|10
+Новогродівка|48.20|37.33|10
+Святогірськ|49.03|37.57|10
+Сіверськ|48.87|38.10|10
+Соледар|48.69|38.07|10
+Світлодарськ|48.37|38.20|10
+Ясинувата|48.13|37.86|10
+Макіївка|48.05|37.97|8
+Горлівка|48.30|38.03|8
+Єнакієве|48.23|38.20|9
+Шахтарськ|48.05|38.47|9
+Торез|48.03|38.60|9
+Кадіївка|48.57|38.65|9
+Брянка|48.50|38.65|10
+Антрацит|48.12|39.08|9
+Роздольне|45.77|33.45|10
+Совєтський|45.35|34.90|10
+Білогірськ|45.06|34.60|9
+Інкерман|44.61|33.60|10
+Гурзуф|44.55|34.28|11
+Коктебель|44.96|35.24|11
+Щолкіне|45.43|35.83|10
+Апостолове|47.66|33.72|10
+Зеленодольськ|47.57|33.65|10
+Верхньодніпровськ|48.65|34.33|10
+Верхівцеве|48.52|34.00|11
+П'ятихатки|48.46|33.69|10
+Межова|48.25|36.73|10
+Підгородне|48.55|35.15|11`.split('\n').forEach(r=>{const a=r.split('|');if(!have.has(a[0])){have.add(a[0]);CT.push({n:a[0],la:+a[1],ln:+a[2],z:+a[3]})}});lab()}
+
+// ---- v4.3: віконечко з малюнком шикування
+function fmSvg(n,f,col,sz){let sd=7;const rnd=()=>(sd=(sd*16807)%2147483647)/2147483647;
+ let O=fmOff(n,f);if(f==='swarm'||f==='wide'){O=O.map((o,i)=>{const a=rnd()*6.283,r=i?(f==='swarm'?1+rnd()*(2+n*.4):8+rnd()*Math.min(40,6+n*2.5)):0;return[r*Math.cos(a),r*Math.sin(a)]})}
+ const xs=O.map(o=>o[1]),ys=O.map(o=>-o[0]),x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys),W=sz-18,Hh=sz-26,
+ k=Math.min(15,W/Math.max(x1-x0,.01),Hh/Math.max(y1-y0,.01)),cx=sz/2-(x0+x1)/2*k,cy=sz/2+4-(y0+y1)/2*k;
+ return `<svg viewBox="0 0 ${sz} ${sz}" width="${sz}" height="${sz}"><path d="M${sz/2} 15V3m-4 4 4-4 4 4" stroke="#ffffff99" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-dasharray="3 3"><animate attributeName="stroke-dashoffset" from="6" to="0" dur="1s" repeatCount="indefinite"/></path>`+
+ O.map(o=>`<circle cx="${(cx+o[1]*k).toFixed(1)}" cy="${(cy-o[0]*k).toFixed(1)}" r="${sz>70?4.2:3.4}" fill="${col}" stroke="#000a" stroke-width=".8"/>`).join('')+'</svg>'}
+const fpEl=$('fp'),fpCol=()=>T[Q.t].c;
+function fpBuild(){fpEl.innerHTML=`<div class="fph"><b>Як полетять ×${Q.n}</b><button id="fpx">✖</button></div><div class="fpg">`+FM.map(a=>`<div class="fpc${a[0]===Q.f?' on':''}" data-f="${a[0]}">${fmSvg(Q.n,a[0],fpCol(),84)}<span>${a[1]} ${a[2]}</span></div>`).join('')+`</div><small>Стрілка — напрямок польоту. Рій і розсип — приблизний вигляд.</small>`}
+function fpOpen(){fpBuild();const r=$('qb').getBoundingClientRect();fpEl.style.bottom=Math.round(innerHeight-r.top+8)+'px';fpEl.hidden=false}
+function fpClose(){fpEl.hidden=true}
+$('qf').onclick=e=>{e.stopPropagation();fpEl.hidden?fpOpen():fpClose()};
+fpEl.addEventListener('click',e=>{e.stopPropagation();if(e.target.closest('#fpx'))return fpClose();const c=e.target.closest('.fpc');if(!c)return;Q.f=c.dataset.f;try{localStorage.setItem('alarmqf',Q.f)}catch(x){}qUi();fpBuild();setTimeout(fpClose,260)});
+document.addEventListener('pointerdown',e=>{if(!fpEl.hidden&&!e.target.closest('#fp,#qf'))fpClose()},true);
+$('qn').addEventListener('click',()=>{if(!fpEl.hidden)fpBuild()});
+$('qt').addEventListener('click',()=>{if(!fpEl.hidden)fpBuild()});
+function fpv(){const e=$('fpv');if(e&&!$('fgr').hidden)e.innerHTML=fmSvg(+$('fn').value||1,$('fs').value||'rows',T[$('t').value].c,72)}
+
+// ---- v4.4: «масова атака» у ТГК, якщо багато цілей летить приблизно в одну точку
+Object.assign(TP,{mass:[['Сьогодні може бути масова атака на {c}.','Ворог запланував масову атаку на {c}.','{c}: очікуємо масований удар, {t} в повітрі.'],['⚠️ Сьогодні може бути масова атака на {c} 🙏','Ворог запланував масову атаку на {c}. Будьте обережні 🚨','📍 {c} — на нас йде купа цілей, готуємось'],['За даними моніторингу, не виключена масована атака на {c}. Залишайтесь на зв’язку.','Ймовірний масований удар по {c}. Рекомендуємо бути в укритті.','Ворог планує масовану атаку: орієнтир — {c}.'],['‼️ МАСОВАНА АТАКА на {c}! Усі в укриття!!!','🚨 Ворог запланував масову атаку на {c}!! Не ігноруйте тривогу','❗️{c}, готуйтесь до масованої атаки! Ідіть в укриття']]});
+KH.mass='попередження про можливу масову атаку: багато цілей летить в одну точку';
+const MAX=['Повітряні Сили ЗС України','Повітряний простір України UA','Офіційний радар UA Захід Тривога'],MA={};let maT=0;
+const acc=n=>n.replace(/^Нова /,'Нову ').replace(/^Велика /,'Велику ').replace(/^Мала /,'Малу ').replace(/а$/,'у').replace(/я$/,'ю').replace(/а область$/,'у область');
+function maName(c,o){let b=null,bd=25;const all=CT.slice();PTD.forEach(a=>a.forEach(p=>{if(Math.abs(p[1]-c[0])<.3&&Math.abs(p[2]-c[1])<.5)all.push({n:p[0],la:p[1],ln:p[2]})}));
+ all.forEach(z=>{const d=dist([z.la,z.ln],c);if(d<bd){bd=d;b=z}});if(b)return acc(b.n);const r=hitR(L.latLng(c));return r?r.n:o?acc(oname(o)):'цей район'}
+function maPost(c,n){const o=obAt(L.latLng(c),true),nm=maName(c,o),f={k:'mass',t:n+' цілей',n,r:'на '+nm,c:nm,d:'',z:'',s:'',o},
+ cs=CH.filter(ch=>!MAX.includes(ch[0])&&chOk(ch,f,null)).sort(()=>Math.random()-.5).slice(0,Math.random()<.5?2:1);
+ cs.forEach((ch,i)=>setTimeout(()=>post(f,ch),i*3500));if(o)logEv(o,null,'x','⚠️ Можлива масова атака на '+nm+' ('+n+' цілей)','ТГК')}
+setInterval(()=>{if(document.hidden)return;const A=obs.filter(x=>x.sIn<=0&&x.route.length);if(A.length<6)return;const E=A.map(x=>x.route[x.route.length-1]),used=new Set();
+ for(let i=0;i<A.length;i++){if(used.has(i))continue;const g=[];for(let j=0;j<A.length;j++)if(dist(E[i],E[j])<35)g.push(j);if(g.length<6)continue;g.forEach(j=>used.add(j));
+  const c=[g.reduce((a,j)=>a+E[j][0],0)/g.length,g.reduce((a,j)=>a+E[j][1],0)/g.length],key=Math.round(c[0]*2)+','+Math.round(c[1]*2);
+  if((MA[key]&&Date.now()-MA[key]<300000)||Date.now()-maT<60000)continue;MA[key]=maT=Date.now();maPost(c,g.length)}},3000);
