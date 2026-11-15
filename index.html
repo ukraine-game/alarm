@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="uk"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Мапа тривог — симулятор</title>
+<link rel="icon" href="img/favicon.ico" sizes="any">
+<link rel="shortcut icon" href="img/favicon.ico">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<link rel="stylesheet" href="style.css">
+</head><body>
+<header><b>🇺🇦 Мапа тривог</b><span class="tag">СИМУЛЯТОР<span class="w"> · не реальні дані</span></span>
+<span id="cnt"></span><span class="sp"></span><button id="ua" title="Приховати сусідні країни">🇺🇦<span class="w"> Лише Україна</span></button><button id="snd" title="Звук сирени">🔕</button><select id="spd" title="Швидкість часу"></select><button id="adm">🛠 Адмін</button></header>
+<div id="map"></div>
+<div id="thr" title="Загрози — натисніть: де тривога, рівень, тривалість"><span class="tt">Загрози:</span><img src="img/icon_air.svg" alt="" class="ti"><b id="tn">0</b></div>
+<div id="tp" hidden><div class="tph"><b>🚨 Загрози й тривоги</b><button id="tpx">✖</button></div><div id="tl"></div><div class="th2">Де тривога <small>(торкніться рядка — підсвітити загрози та їхній шлях)</small></div><div id="tpl"></div></div>
+<div id="qb"><div id="qt"></div><div class="qs"><button id="qn" title="Скільки цілей за раз">×1</button><button id="qm" title="Складний маршрут (кілька точок)">〰</button><button id="qx" hidden>✖</button></div></div>
+<div id="al" hidden><div id="alh"></div><div id="tgk"></div></div>
+<aside id="panel" hidden>
+<div class="row"><button data-a="as" id="asb">🚨 АС Тривог</button><button data-a="clr">🟢 Відбій усім</button><button data-a="del">🗑 Очистити об'єкти</button></div>
+<details id="asd"><summary>⚙ Налаштування АС (радіус і колір тривоги)</summary><div id="ass"></div><small>АС Тривог сама вмикає 🟡/🔴 в районах, куди потрапляє зона цілі (радіус довкола неї та попереду по маршруту), і знімає відбій через ~3 хв після виходу цілі із зони. Ручні зміни АС не чіпає.</small></details>
+<p><small>ПКМ по карті (на телефоні — довге натискання) → «Створити об'єкт», далі клікайте по карті — кожен клік додає точку маршруту. Клік по району/області — тривога. Клік по об'єкту — змінити маршрут.</small></p>
+<h4>🖌 Швидке фарбування</h4><div class="row" id="gr"><button data-g="r" class="on">Райони</button><button data-g="o">Цілі області</button></div><div class="row" id="br"><button data-b="2">🔴</button><button data-b="1">🟡</button><button data-b="0">🟢</button><button data-b="x">✋ Вимкнути</button></div>
+<small>Оберіть колір і клікайте чи водіть пальцем/мишею. «Райони» — тривога лише в районі, «Цілі області» — в усій області.</small>
+<h4>Об'єкти</h4><div id="ob"></div><h4>Області та райони</h4><input id="fq" placeholder="🔎 Пошук області чи району" style="width:100%"><div id="ol"></div>
+</aside>
+<div id="cr"></div>
+<div id="menu" hidden>➕ Створити об'єкт</div>
+<div id="hint" hidden><span id="ht"></span><button id="hc">✖</button></div>
+<div id="dlg" class="modal" hidden>
+<h4 id="dh">Створити об'єкт</h4>
+<label>Тип<select id="t"></select></label>
+<small>🎯 Клікайте по карті — кожна точка додається до маршруту, об'єкт пролетить через усі по черзі (можна ламаним маршрутом чи зиґзаґом). ПКМ — прибрати останню точку.</small>
+<label id="stl">Старт через (хв, 0 — одразу)<input id="st" type="number" min="0" value="0"></label>
+<small id="info"></small>
+<div class="row"><button id="pk" class="on">🎯 Ставити точки</button><button id="un">↩ Назад</button><button id="zz">〰 Зиґзаґ</button><button id="rk">🧹 Очистити</button></div>
+<div class="row"><button id="ok" class="go">Запустити</button><button id="no">Скасувати</button></div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
+<script src="config.js"></script>
+<script src="script.js"></script>
+</body></html>
