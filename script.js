@@ -39,7 +39,7 @@ OB.forEach((o,i)=>o.i=i);
 const busy=()=>pick||brush!==null||routeOn||!$('dlg').hidden;
 const TG=[];let EV=[],evD=0;try{EV=JSON.parse(localStorage.getItem('alarmev')||'[]')}catch(e){}
 let routeOn=false,R=[],savedR=[],brush=null,down=0,lastH=null,snd=false,ac,ah='',obs=[],nid=1,admin=false,pick=null,org=null,lp=0,lt,sp,scale=10,last=performance.now(),mll,toastT;
-const rad=Math.PI/180;
+let SIMT=0;const rad=Math.PI/180;
 const dest=(la,ln,b,km)=>[la+km*Math.cos(b*rad)/111.32,ln+km*Math.sin(b*rad)/(111.32*Math.cos(la*rad))];
 const brg=(a,b)=>(Math.atan2((b[1]-a[1])*Math.cos(a[0]*rad),b[0]-a[0])/rad+360)%360;
 const dist=(a,b)=>Math.hypot((b[0]-a[0])*111.32,(b[1]-a[1])*111.32*Math.cos(a[0]*rad));
@@ -78,7 +78,7 @@ lcc.classList.remove('leaflet-control-layers-expanded');
 const tg=L.DomUtil.create('a','leaflet-control-layers-toggle');tg.href='#';tg.title='Теми карти';lcc.insertBefore(tg,lcc.firstChild);
 tg.onclick=e=>{e.preventDefault();lcc.classList.toggle('leaflet-control-layers-expanded')};
 const lcClose=()=>lcc.classList.remove('leaflet-control-layers-expanded');map.on('click movestart',lcClose);
-const alc=L.control({position:'topleft'});alc.onAdd=()=>{const d=$('al');L.DomEvent.disableClickPropagation(d);L.DomEvent.disableScrollPropagation(d);return d};alc.addTo(map);
+const alc=L.control({position:'topleft'});alc.onAdd=()=>{const d=$('al');L.DomEvent.disableClickPropagation(d);L.DomEvent.disableScrollPropagation(d);return d};document.body.append($('al'));
 map.on('baselayerchange',e=>{try{localStorage.setItem('alarmbase',e.name)}catch(x){}theme(e.name);lcClose()});
 const CT=`Київ|50.45|30.52|5
 Харків|49.99|36.23|5
@@ -135,8 +135,8 @@ const CT=`Київ|50.45|30.52|5
 Феодосія|45.03|35.38|7
 Ізмаїл|45.35|28.84|7
 Білгород-Дністровський|46.19|30.35|7`.split('\n').map(r=>{const a=r.split('|');return{n:a[0],la:+a[1],ln:+a[2],z:+a[3]}});
-function lab(){CL.clearLayers();const z=map.getZoom();CT.forEach(c=>{if(z>=c.z)L.marker([c.la,c.ln],{interactive:false,keyboard:false,zIndexOffset:-500,icon:L.divIcon({className:'',iconSize:[0,0],html:`<span class="cl">${c.n}</span>`})}).addTo(CL)})}
-map.on('zoomend',lab);lab();
+function lab(){CL.clearLayers();const z=map.getZoom();const B=map.getBounds().pad(.25);CT.forEach(c=>{if(z>=c.z&&B.contains([c.la,c.ln]))L.marker([c.la,c.ln],{interactive:false,keyboard:false,zIndexOffset:-500,icon:L.divIcon({className:'',iconSize:[0,0],html:`<span class="cl">${c.n}</span>`})}).addTo(CL)})}
+map.on('zoomend moveend',lab);lab();
 var MK;
 const MR=L.canvas({pane:'mask',padding:0.1});
 function setMask(rings){if(MK)map.removeLayer(MK);MK=L.polygon([[[-85,-180],[-85,180],[85,180],[85,-180]]].concat(rings),{pane:'mask',interactive:false,fillColor:BG[bk],fillOpacity:1,color:'#8aa0c8',weight:1.5,fillRule:'evenodd',renderer:MR,smoothFactor:2});if(only)MK.addTo(map)}
@@ -165,7 +165,7 @@ $('hc').onclick=cancelPick;
 document.onkeydown=e=>{if(e.key==='Escape')cancelPick()};
 
 let svT=0;const save=()=>{if(!svT)svT=setTimeout(doSave,400)};addEventListener('pagehide',()=>doSave());
-function doSave(){svT=0;try{localStorage.setItem('alarmsim1',JSON.stringify({n:nid,o:OB.map(o=>[o.st,o.t,o.a?1:0,o.ts||0]),r:R.map(r=>[r.st,r.t,r.a?1:0,r.ts||0]),b:obs.map(x=>({id:x.id,t:x.t,p:x.p,h:x.h,route:x.route,sIn:x.sIn,tr:x.tr.slice(-150)}))}))}catch(e){}}
+function doSave(){svT=0;try{localStorage.setItem('alarmsim1',JSON.stringify({n:nid,o:OB.map(o=>[o.st,o.t,o.a?1:0,o.ts||0]),r:R.map(r=>[r.st,r.t,r.a?1:0,r.ts||0]),b:obs.map(x=>({id:x.id,t:x.t,p:x.p,h:x.h,route:x.route,sIn:x.sIn,sf:x.sf,fid:x.fl&&x.fl.i,tr:x.tr.slice(-150)}))}))}catch(e){}}
 function cnt(){const A=OB.filter(o=>o.st&&!R.some(r=>r.ob===o.i)).map(o=>[o.st,oname(o),o.t]).concat(R.filter(r=>r.st).map(r=>[r.st,r.n+' ('+OB[r.ob].n+')',r.t])).sort((a,b)=>b[0]-a[0]);
  $('cnt').textContent=`🔴 ${A.filter(a=>a[0]==2).length}  🟡 ${A.filter(a=>a[0]==1).length}`;thr();
  const h=A.map(a=>`${a[0]==2?'🔴':'🟡'} ${a[1]} <small>${a[2]}</small>`).join('<br>');if(h!==ah){ah=h;$('alh').innerHTML=h;alVis()}}
@@ -276,7 +276,7 @@ const sk=s=>s.toLowerCase().replace(/\s*(район|raion|district)\s*$/,'').rep
 Чернігівська:Корюківський,Ніжинський,Новгород-Сіверський,Прилуцький,Чернігівський
 АР Крим:Бахчисарайський,Білогірський,Джанкойський,Євпаторійський,Керченський,Красноперекопський,Курманський,Сімферопольський,Феодосійський,Ялтинський`.split('\n').forEach(l=>{const[n,d]=l.split(':'),o=OB.find(o=>o.n===n);if(o)o.D=d.split(',').map(x=>({name:x+' район',k:sk(x)}))});
 $('cr').textContent='© '+(CFG.OWNER||'')+' · симулятор, не реальні дані';
-(async()=>{loadMask();let g;for(const u of['https://cdn.jsdelivr.net/gh/EugeneBorshch/ukraine_geojson@master/UA_FULL_Ukraine.geojson','https://raw.githubusercontent.com/EugeneBorshch/ukraine_geojson/master/UA_FULL_Ukraine.geojson']){try{g=await(await fetch(u)).json();break}catch(e){}}
+window.INIT=(async()=>{loadMask();let g;for(const u of['https://cdn.jsdelivr.net/gh/EugeneBorshch/ukraine_geojson@master/UA_FULL_Ukraine.geojson','https://raw.githubusercontent.com/EugeneBorshch/ukraine_geojson/master/UA_FULL_Ukraine.geojson']){try{g=await(await fetch(u)).json();break}catch(e){}}
  if(g)g.features.forEach(f=>{const o=find(f);if(o&&!o.L)bind(o,L.geoJSON(f,{smoothFactor:2.5}),f.geometry)});
  OB.forEach(o=>{if(!o.L)bind(o,L.circle(o.c,{radius:o.n==='Київ'?15000:50000}))});maskFromObl();await loadR()})();
 
@@ -289,24 +289,24 @@ function draw(x){const vis=x.sIn<=0||admin,e=x.m.getElement(),op=vis?(x.sIn>0?0.
  if(admin){x.l.setLatLngs([x.p].concat(x.route));x._l=1}else if(x._l){x.l.setLatLngs([]);x._l=0}
  const kk=vis?x.tr.length:-1;if(x._k!==kk){x._k=kk;x.r.setLatLngs(vis?x.tr:[])}
  if(admin&&AS.on&&x.sIn<=0){x.z.setLatLng(x.p).setRadius(AS.c[x.t].r*1000);if(!map.hasLayer(x.z))x.z.addTo(map)}else if(map.hasLayer(x.z))map.removeLayer(x.z)}
-function add(t,p,route,delay){const x={id:nid++,t,p:[p.lat,p.lng],h:brg([p.lat,p.lng],route[0]),route:route.map(r=>r.slice()),sIn:delay*60,tr:[[p.lat,p.lng]]};mk(x);obs.push(x);save();ui()}
-function rm(x){if(!x)return;[x.m,x.l,x.r,x.z].forEach(l=>map.removeLayer(l));obs=obs.filter(o=>o!==x);save();ui()}
-function boomSnd(){if(!snd)return;try{ac=ac||new AudioContext();const o=ac.createOscillator(),g=ac.createGain(),t=ac.currentTime;o.type='sawtooth';o.connect(g);g.connect(ac.destination);o.frequency.setValueAtTime(110,t);o.frequency.exponentialRampToValueAtTime(30,t+.7);g.gain.setValueAtTime(.18,t);g.gain.exponentialRampToValueAtTime(.001,t+.8);o.start();o.stop(t+.85)}catch(e){}}
-function boom(x){const p=x.p.slice();tgm(x,'hit');rm(x);
+function add(t,p,route,delay){const x={id:nid++,t,p:[p.lat,p.lng],h:brg([p.lat,p.lng],route[0]),route:route.map(r=>r.slice()),sIn:delay*60,tr:[[p.lat,p.lng]],sf:0.92+Math.random()*0.16};mk(x);obs.push(x);save();ui()}
+function rm(x){if(!x)return;if(x.fl&&!x.fl.e){x.fl.e=Math.round(SIMT);x.fl.P.push([Math.round(SIMT),+x.p[0].toFixed(3),+x.p[1].toFixed(3)])}[x.m,x.l,x.r,x.z].forEach(l=>map.removeLayer(l));obs=obs.filter(o=>o!==x);save();ui()}
+function boomSnd(){if(!snd)return;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();const o=ac.createOscillator(),g=ac.createGain(),t=ac.currentTime;o.type='sawtooth';o.connect(g);g.connect(ac.destination);o.frequency.setValueAtTime(110,t);o.frequency.exponentialRampToValueAtTime(30,t+.7);g.gain.setValueAtTime(.18,t);g.gain.exponentialRampToValueAtTime(.001,t+.8);o.start();o.stop(t+.85)}catch(e){}}
+function boom(x){const p=x.p.slice();if(x.fl)x.fl.h=1;tgm(x,'hit');rm(x);
  const b=L.marker(p,{icon:L.divIcon({className:'',html:'<div class="bx"><i></i><i></i><b>💥</b></div>',iconSize:[64,64],iconAnchor:[32,32]}),interactive:false,keyboard:false,zIndexOffset:900}).addTo(map);setTimeout(()=>map.removeLayer(b),3600);
  const c=L.circle(p,{radius:5000,color:'#ff5722',weight:2,fillColor:'#ff9800',fillOpacity:.22,interactive:false}).addTo(map);setTimeout(()=>map.removeLayer(c),7000);boomSnd()}
 function edit(x){if(busy())return;const t=T[x.t],d=document.createElement('div');d.innerHTML=`<b>${t.n}</b><br><small>курс ${Math.round(x.h)}° · ${t.s} км/год · ще ${Math.ceil(remMin(x))} хв · точок маршруту: ${x.route.length}</small>`;
  if(admin){d.innerHTML+=`<br><button class="eo">✎ Маршрут</button><button class="ex">🗑</button>`;
   d.querySelector('.eo').onclick=()=>{map.closePopup();openNew(L.latLng(x.p),x)};d.querySelector('.ex').onclick=()=>{map.closePopup();rm(x)}}
  L.popup().setLatLng(x.p).setContent(d).openOn(map)}
-setInterval(()=>{const n=performance.now();if(document.hidden){last=n;return}const dt=Math.min((n-last)/1000,1)*scale;last=n;
+setInterval(()=>{const n=performance.now();if(document.hidden){last=n;return}const dt=Math.min((n-last)/1000,1)*scale;last=n;SIMT+=dt*1000;
  for(const x of obs.slice()){let d=dt;if(x.sIn>0){x.sIn-=d;if(x.sIn>0)continue;d=-x.sIn;x.sIn=0}
-  const v=T[x.t].s/3600,tol=Math.max(1.5,v/(TURN*rad)*1.1);
+  const v=T[x.t].s*(x.sf||1)/3600,tol=Math.max(1.5,v/(TURN*rad)*1.1);
   while(d>0&&x.route.length){const k=Math.min(d,5);d-=k;const q=x.route[0],db=dist(x.p,q),last_=x.route.length===1;
    if(db<=(last_?Math.max(v*k,tol*0.5):tol)){if(last_){x.p=q.slice();x.route=[];break}x.route.shift();continue}
    const df=((brg(x.p,q)-x.h+540)%360)-180;x.h=(x.h+Math.sign(df)*Math.min(Math.abs(df),TURN*k)+360)%360;x.p=dest(x.p[0],x.p[1],x.h,v*k);
    if(dist(x.tr[x.tr.length-1],x.p)>2)x.tr.push(x.p)}
-  if(!x.route.length){boom(x);continue}draw(x)}},MOB?220:150);
+  if(!x.route.length){boom(x);continue}draw(x);typeof rec==='function'&&rec(x)}},MOB?220:150);
 setInterval(()=>{if(obs.length)save();if(evD){evD=0;try{localStorage.setItem('alarmev',JSON.stringify(EV))}catch(e){}}if(admin)rpB();cnt();if(HLu)hlDraw();tpR()},1000);
 
 // ---- АС Тривог: автоматична система тривог
@@ -318,12 +318,12 @@ function hit(u,s,r){if(!u.P){u.P=u.g?ptsOf(u.g):[u.c];u.pad=u.g?0:(u.n==='Киї
 function samples(x,r){const P=[x.p].concat(x.route),o=[x.p],W=[r*0.5,r];let acc=0,k=0;
  for(let i=1;i<P.length&&k<2;i++){const sd=dist(P[i-1],P[i]);while(k<2&&sd>0&&acc+sd>=W[k]){const f=(W[k]-acc)/sd;o.push([P[i-1][0]+(P[i][0]-P[i-1][0])*f,P[i-1][1]+(P[i][1]-P[i-1][1])*f]);k++}acc+=sd}
  if(k<2)o.push(P[P.length-1]);return o}
-function autoSet(u,v){const old=u.st;if(old!==v){const o=u.ob!==undefined?OB[u.ob]:u;logEv(o,u.ob!==undefined?u.n:null,'s'+v,SM[v],'АС Тривог')}u.st=v;if(old!==v||!u.ts){u.t=v?tm():'';u.ts=v?Date.now():0}u.a=v?1:0;u.ob!==undefined?paintR(u):paint(u)}
+function autoSet(u,v){const old=u.st;if(v===0&&old&&typeof tgU==='function')tgU(u,'off');if(old!==v){const o=u.ob!==undefined?OB[u.ob]:u;logEv(o,u.ob!==undefined?u.n:null,'s'+v,SM[v],'АС Тривог')}u.st=v;if(old!==v||!u.ts){u.t=v?tm():'';u.ts=v?Date.now():0}u.a=v?1:0;u.ob!==undefined?paintR(u):paint(u)}
 function asTick(){if(!AS.on)return;if(!obs.length&&!R.some(u=>u.st&&u.a)&&!OB.some(u=>u.st&&u.a))return;const U=units(),need=new Map();
  obs.forEach(x=>{if(x.sIn>0)return;const c=AS.c[x.t],S=samples(x,c.r);U.forEach(u=>{if(S.some(s=>hit(u,s,c.r)))need.set(u,Math.max(need.get(u)||0,c.l))})});
  let ch=0,red=0;
  U.forEach(u=>{const n=need.get(u)||0;let v=null;
-  if(n){u.free=0;if(u.st<n||(u.a&&u.st>n))v=n}else if(u.st&&u.a){u.free=(u.free||0)+scale;if(u.free>=HOLD)v=0}
+  if(n){u.free=0;u.dz=0;if(u.st<n||(u.a&&u.st>n))v=n}else if(u.st&&u.a){u.free=(u.free||0)+scale;if(u.free>=HOLD/2&&!u.dz){u.dz=1;typeof tgU==='function'&&tgU(u,'clr')}if(u.free>=HOLD)v=0}
   if(v!==null){autoSet(u,v);ch++;if(v==2)red=1}});
  if(ch){save();ui();if(red)siren()}}
 setInterval(asTick,1000);
@@ -362,7 +362,7 @@ function qGo(){if(!$('dlg').hidden)return;if(brush!==null)setBrush(null);const t
   if(Q.m){Q.on=0;qUi();$('t').value=Q.t;return openNew(a)}
   pl.setStyle({color:t.c});pl.setLatLngs([Q.s,Q.s]);rg.clearLayers();L.circleMarker(Q.s,{radius:6,color:'#fff',fillColor:'#2e7d32',fillOpacity:1,weight:2,interactive:false}).addTo(rg);map.on('mousemove',qMv);
   startPick('🎯 Тепер торкніться — куди летить (кінцева точка)',b=>{const s=Q.s,e=[b.lat,b.lng];map.off('mousemove',qMv);
-   if(dist(s,e)>=3)for(let i=0;i<Q.n;i++){const p=i?dest(s[0],s[1],Math.random()*360,Math.random()*6):s,q=i?dest(e[0],e[1],Math.random()*360,Math.random()*14):e;add(Q.t,L.latLng(p[0],p[1]),[q],0)}
+   if(dist(s,e)>=3){const sp=Math.min(40,6+Q.n*2.5),ep=Math.min(60,10+Q.n*4);for(let i=0;i<Q.n;i++){const p=i?dest(s[0],s[1],Math.random()*360,8+Math.random()*sp):s,q=i?dest(e[0],e[1],Math.random()*360,6+Math.random()*ep):e;add(Q.t,L.latLng(p[0],p[1]),[q],i?Math.random()*0.12:0)}}
    qGo()},qStop)},qStop)}
 $('qt').onclick=e=>{const b=e.target.closest('button');if(!b)return;const k=b.dataset.q;if(Q.on&&Q.t===k)return qStop();Q.t=k;try{localStorage.setItem('alarmq',k)}catch(x){}if(Q.on)qStop();qGo()};
 $('qn').onclick=()=>{Q.n=Q.n===1?3:Q.n===3?5:Q.n===5?10:1;qUi()};
@@ -395,7 +395,7 @@ function paintAt(e){const ll=map.mouseEventToLatLng(e),r=hitR(ll),o=r?(gran==='o
 mc.addEventListener('pointerdown',e=>{down++;if(brush!==null&&down===1&&!e.target.closest('.leaflet-control,.leaflet-popup')){lastH=null;paintAt(e)}},true);
 mc.addEventListener('pointermove',e=>{if(brush!==null&&down===1&&e.buttons&1)paintAt(e)});
 ['pointerup','pointercancel'].forEach(k=>addEventListener(k,()=>{down=Math.max(0,down-1)}));
-function siren(){if(!snd)return;ac=ac||new AudioContext();const o=ac.createOscillator(),g=ac.createGain(),t=ac.currentTime;o.connect(g);g.connect(ac.destination);g.gain.value=0.08;o.frequency.setValueAtTime(500,t);for(let i=0;i<3;i++){o.frequency.linearRampToValueAtTime(900,t+i*2+1);o.frequency.linearRampToValueAtTime(500,t+i*2+2)}o.start();o.stop(t+6)}
+function siren(){if(!snd)return;ac=ac||new(window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();const o=ac.createOscillator(),g=ac.createGain(),t=ac.currentTime;o.connect(g);g.connect(ac.destination);g.gain.value=0.08;o.frequency.setValueAtTime(500,t);for(let i=0;i<3;i++){o.frequency.linearRampToValueAtTime(900,t+i*2+1);o.frequency.linearRampToValueAtTime(500,t+i*2+2)}o.start();o.stop(t+6)}
 $('snd').onclick=()=>{snd=!snd;$('snd').textContent=snd?'🔔':'🔕';if(snd)siren()};
 
 $('ua').classList.toggle('on',only);
@@ -430,23 +430,28 @@ $('tpx').onclick=tpClose;$('thr').onclick=()=>{if($('tp').hidden){$('tp').hidden
 // ---- ТГК-симуляція (вигадані канали) + Groq ШІ
 const DIRS=['північ','північний схід','схід','південний схід','південь','південний захід','захід','північний захід'],cmp=a=>DIRS[Math.round(((a%360)+360)%360/45)%8];
 // вигадані канали: [назва, стиль для ШІ, номер стилю шаблонів 0-3]
-const CH=[['Небесний Монітор','сухо й коротко, як диспетчер',0],['Радар-Сім','швидко, з емодзі, трохи емоційно',1],['Сіре Небо ТГК','офіційно, обережно, «за даними моніторингу»',2],['Вартові Неба','тривожно, закликає до укриття',3],['Антишахед Моніт','жаргон моніторів, скорочення',0],['Тихий Радар','спокійно, лаконічно, без окликів',2],['Повітряний Вахтовий','розмовно, як людина в чаті',1],['Ніч над Країною','образно, але дуже коротко',3],['Лінія Протиповітряна','чітко, як військова зведення',2],['Моніторинг 24/7','стисло: тип, місце, напрямок',0],['Чорне Небо UA','напружено, короткі речення',3],['Київський Радар','з орієнтиром на місто й напрям',1]];
+const CH=[['Повітряний простір України UA','офіційно, коротко, як сповіщення про тривогу',2,''],['Офіційний радар UA Захід Тривога','коротко, з 🚨, регіон — захід',2,'Львівська Волинська Рівненська Тернопільська Івано-Франківська Закарпатська Чернівецька Хмельницька'],['Повітряні Сили ЗС України','сухо, військова зведення, без емодзі',2,''],['Карта Повітряних Тривог !! Вибухи !! Ракети!!','капс, окличні знаки, емодзі',3,''],['НЕПТУН','військовий жаргон, дуже коротко',0,''],['Хроніки війни | Оперативний Монітор','стисла хронологія',0,''],['Доброго вечора ми з Тернополя','розмовно, місцевий тон, Тернопіль',1,'Тернопільська'],['Хуйовий Тернопіль','розмовно, іронічно, без лайки, Тернопіль',1,'Тернопільська'],['Труха Україна','розмовно, скептично, емоційно',1,''],['Де Ракета? Моніторинг','тип цілі й напрямок',0,''],['Захід Інформує','регіон — захід, чітко',2,'Львівська Волинська Рівненська Тернопільська Івано-Франківська Закарпатська Чернівецька Хмельницька'],['Львів Інформує','Львів і область, тривожно',3,'Львівська'],['Швидше всіх','дуже швидко, емодзі, без деталей',1,''],['Радник','спокійно, з порадою ховатись',2,''],['Інформатор','розмовно, коротко',1,''],['Лачен пише','особистий тон, коротко',1,''],['Вибухи та бавовна','акцент на вибухах, емодзі 💥',3,''],['Без фільтрів','різко, коротко',3,''],['НЕВІДОМИЙ','лаконічно, загадково',0,''],['Схід UA Онлайн','регіон — схід, чітко',0,'Харківська Донецька Луганська Дніпропетровська Запорізька Сумська Полтавська'],['Одеса Інформує','Одеса й південь, жваво',1,'Одеська Миколаївська Херсонська']];
 // шаблони (запасний варіант без ШІ): [стиль][варіант]; {t}тип {r}де {d}напрямок {c}орієнтир {z}небезпека {s}місце удару
-const TP={new:[['{t} — {r}, курс на {d}.','Нова ціль: {t}, {r}. Курс {d}, орієнтир — {c}.'],['🛩 Нова ціль: {t} — {r}, курс на {d} 👀','🚨 {t} {r}, курс {d}. Орієнтир: {c}'],['За даними моніторингу, {t} зафіксовано {r}. Орієнтовний напрямок — {d}.','Фіксація: {t}, {r}. Вектор — {d}, орієнтир — {c}.'],['⚠️ {t} — {r}! Курс на {d}. Будьте в укритті.','❗️Увага: {t} {r}, рухається на {d}. Не ігноруйте тривогу']],
- enter:[['{t} вже {r}, курс {d}.','{t} — {r}. Далі на {d}.'],['➡️ {t} вже {r}! Курс {d}','🔜 {t} перетнув межу — {r}, летить на {d}'],['Ціль ({t}) увійшла в межі: {r}. Напрямок — {d}. Небезпека: {z}.','{t} {r}; напрямок — {d}, орієнтир — {c}.'],['⚠️ {t} {r}, курс на {d}! Небезпека: {z}','❗️{t} зайшов — {r}. Небезпека: {z}. В укриття']],
- upd:[['{t} ще {r}, тримає курс на {d}.','{t}: {r}, {d}. Без змін.'],['🔄 {t} ще летить — {r}, орієнтир: {c}','👀 {t} все ще {r}, курс {d}'],['Оновлення: {t} продовжує рух, {r}, орієнтовно на {d}.','За останніми даними, {t} {r}; орієнтир — {c}.'],['⚠️ {t} ще в небі — {r}! Залишайтесь в укритті','❗️{t} {r} продовжує політ на {d}. Небезпека: {z}']],
- hit:[['{t} — приліт, {s}. Вибух зафіксовано.','Вибух: {s} ({t}). Кінець маршруту.'],['💥 Бавовна! {t} долетів — {s}','💥💥 Приліт {s}! {t}'],['Повідомляють про вибух: {s}. Ймовірна причина — {t}. Уточнюємо.','Зафіксовано влучання ({t}), {s}. Деталі уточнюються.'],['💥 Вибух {s}! {t} досяг цілі. Не виходьте з укриття.','‼️ Гучно: {s}. {t} — приліт. Лишайтесь в укритті']]};
+const TP={
+new:[['{t} — {r}, курс на {d}.','Нова ціль: {t}, {r}. Курс {d}, орієнтир — {c}.','{t} {r}. На {d}.'],['🛩 {t} — {r}, курс на {d} 👀','🚨 {t} {r}, курс {d}. Орієнтир: {c}','Нова ціль! {t}, {r}. Дивимось на {c} 👀'],['За даними моніторингу, {t} зафіксовано {r}. Напрямок — {d}.','Фіксація: {t}, {r}. Вектор — {d}, орієнтир — {c}.','{t}: {r}. Напрямок орієнтовно — {d}.'],['⚠️ {t} — {r}! Курс на {d}. В укриття!','❗️{t} {r}, на {d}. Не ігноруйте тривогу','🚨 {r} — {t}! Курс на {c}, обережно!']],
+enter:[['{t} вже {r}, курс {d}.','{t} — {r}. Далі на {d}.','{t} зайшов: {r}. Курс {c}.'],['➡️ {t} вже {r}! Курс {d}','🔜 {t} перетнув межу — {r}, летить на {d}','{t} {r}, напрямок на {c}, обережно!'],['Ціль ({t}) увійшла в межі: {r}. Напрямок — {d}. Небезпека: {z}.','{t} {r}; напрямок — {d}, орієнтир — {c}.','Повідомляють: {t} {r}. Напрямок на {c}.'],['⚠️ {t} {r}, курс на {d}! Небезпека: {z}','❗️{t} зайшов — {r}. В укриття','{r} — {t}! {c}, обережно!!']],
+upd:[['{t} ще {r}, курс {d}.','{t}: {r}, {d}. Без змін.','{t} продовжує рух, орієнтир {c}.'],['🔄 {t} ще летить — {r}, орієнтир: {c}','👀 {t} все ще {r}, курс {d}','{t} далі на {c}, обережно!'],['Оновлення: {t} продовжує рух, {r}, орієнтовно на {d}.','За останніми даними, {t} {r}; орієнтир — {c}.','{t} не змінює курс — {d}.'],['⚠️ {t} ще в небі — {r}! Залишайтесь в укритті','❗️{t} {r} продовжує політ на {d}','{c}, тримаємось в укритті!!']],
+hit:[['{t} — приліт, {s}. Вибух зафіксовано.','Вибух: {s} ({t}).','{c} Гучно.'],['💥 Бавовна! {t} долетів — {s}','💥💥 Приліт {s}! {t}','{c} Гучно!! 💥'],['Повідомляють про вибух: {s}. Ймовірна причина — {t}. Уточнюємо.','Зафіксовано влучання ({t}), {s}.','Вибухи в районі м. {c}. Деталі уточнюються.'],['💥 Вибух {s}! {t} досяг цілі. Не виходьте з укриття.','‼️ {c} Гучно!! Лишайтесь в укритті','{c}, сховалися в Укриття!!']],
+dir:[['{t} на {c}.','Напрямок — {c}. Увага.','{t}: курс на {c}.'],['➡️ {t} на {c}, обережно!','{c}, обережно! {t} курсом на місто 👀','Напрямок на {c} ⚠️'],['За даними моніторингу, {t} рухається в напрямку м. {c}.','Напрямок — {c}. Загроза уточнюється.','{t} орієнтовно на {c}.'],['⚠️ {c}! {t} курсом на місто. В укриття!','❗️{c}, обережно, {t} на вас!','🚨 {c} УКРИТТЯ!']],
+near:[['{t} на підльоті до {c}.','До {c} — {t}, підліт.','На підльоті до міста: {c}.'],['На підльоті до міста! {c} 🙏','🔥 {c}, на підльоті {t}','{c}, на підльоті!!'],['Ціль наближається до м. {c}.','{t} на підльоті до {c}. Небезпека.','Підліт до {c}. Залишайтесь в укритті.'],['{c} УКРИТТЯ!','⚠️ {c}, на підльоті! Усі в укриття!!!','Знижається, усі в укриття!!!']],
+clr:[['Дорозвідка {r} — чисто, очікуємо відбій.','Дорозвідка: {r}, нових цілей не фіксуємо.','Дорозвідка. Тихо.'],['🟢 Дорозвідка {r}, схоже на відбій','Дорозвідка — тихо. Скоро відбій 🙏','Дорозвідка: чисто 👌'],['Ситуація {r} стабілізується. Дорозвідка триває.','Дорозвідка: нових цілей {r} не виявлено. Очікуйте відбій.','Триває дорозвідка. Відбою ще немає.'],['Дорозвідка. Поки чисто, але з укриття не виходьте!','❗️Дорозвідка {r}. Не поспішайте виходити.','Дорозвідка… чекаємо відбій!!']],
+off:[['Відбій тривоги {r}.','Відбій {r}.','🟢 Відбій.'],['🟢 Відбій {r}! Дякуємо ПС 🙏','Відбій! {r} 🟢','🟢🟢 Відбій!!'],['Повітряну тривогу {r} скасовано.','Відбій повітряної тривоги {r}.','Відбій. Дякуємо за уважність.'],['🟢 Відбій {r}!','✅ Відбій тривоги {r}. Будьте обережні','Відбій! Але не розслабляйтесь']]};
 const lcN=o=>o.n==='Київ'?'м. Києві':o.n==='АР Крим'?'Криму':o.n==='Севастополь'?'Севастополі':o.n.replace(/а$/,'ій')+' області',
  gnN=o=>o.n==='Київ'?'м. Києва':o.n==='АР Крим'?'АР Крим':o.n==='Севастополь'?'Севастополя':o.n.replace(/а$/,'ої')+' області';
 function alVis(){$('alh').hidden=!ah;$('al').hidden=!ah&&!TG.length}
 function along(x,d){let a=x.p;for(const q of x.route){const sd=dist(a,q);if(sd>=d){const f=d/sd;return[a[0]+(q[0]-a[0])*f,a[1]+(q[1]-a[1])*f]}d-=sd;a=q}return a}
-function facts(x,k){const t=T[x.t],o=obAt(L.latLng(x.p),true),q=along(x,Math.min(remKm(x),90)),c=CT.reduce((a,b)=>dist([b.la,b.ln],q)<dist([a.la,a.ln],q)?b:a),r=AS.c[x.t].r,S=samples(x,r),
+function facts(x,k,cn){const t=T[x.t],o=obAt(L.latLng(x.p),true),q=along(x,Math.min(remKm(x),90)),c=CT.reduce((a,b)=>dist([b.la,b.ln],q)<dist([a.la,a.ln],q)?b:a),r=AS.c[x.t].r,S=samples(x,r),
   dz=units().filter(u=>S.some(s=>hit(u,s,r))).map(u=>u.ob!==undefined?u.n:oname(u));let s='поза кордонами України';
  if(o){const rr=k==='hit'?hitR(L.latLng(x.p)):null,a=rr?rr.n.split(' ')[0]:'';s=rr?(/ий$/.test(a)?'у '+a.replace(/ий$/,'ому')+' районі '+gnN(o):'в районі «'+rr.n+'», '+lcN(o)):'у '+lcN(o)}
- return{k,t:t.n,r:o?'у '+lcN(o):'поза кордонами України',d:cmp(x.h),c:c.n,z:dz.length?dz.slice(0,4).join(', ')+(dz.length>4?' та ще '+(dz.length-4):''):'уточнюється',s,o}}
+ return{k,t:(n=>n>1?'Група '+n+'× '+t.n:t.n)(vobs().filter(y=>y.t===x.t&&dist(y.p,x.p)<40).length),r:o?'у '+lcN(o):'поза кордонами України',d:cmp(x.h),c:cn||c.n,z:dz.length?dz.slice(0,4).join(', ')+(dz.length>4?' та ще '+(dz.length-4):''):'уточнюється',s,o}}
 const tmpl=(f,ch)=>{const P=TP[f.k][ch[2]];return P[Math.random()*P.length|0].replace(/\{(\w)\}/g,(_,c)=>f[c]||'')};
-const SYS='Ти пишеш повідомлення для ВИМИШЛЕНОГО Telegram-каналу в грі-симуляторі моніторингу повітряних цілей. Використовуй ЛИШЕ надані факти (подія, тип цілі, місце, приблизний напрямок, орієнтир-місто, райони небезпеки). Не вигадуй інших міст, чисел, швидкостей і подробиць. Подія «вибух» означає, що ціль досягла кінця маршруту у вказаному місці. Пиши українською, 1-3 короткі рядки, 0-2 емодзі, без підпису, без хештегів, без запитань. Кожне повідомлення має звучати інакше за попередні: не повторюй їхні фрази й будову речень.';
-const KH={new:'нова ціль',enter:'ціль в іншій області',upd:'ціль продовжує рух',hit:'вибух: ціль досягла кінця маршруту'},FMT=['почни з емодзі','почни з типу цілі','почни з місця','без емодзі на початку','лише один рядок','три короткі рядки','розмовний тон','сухий тон зведення'];
+const SYS='Ти пишеш повідомлення для ВИМИШЛЕНОГО Telegram-каналу в грі-симуляторі моніторингу повітряних цілей. Використовуй ЛИШЕ надані факти (подія, тип цілі, місце, приблизний напрямок, орієнтир-місто, райони небезпеки). Не вигадуй інших міст, чисел, швидкостей і подробиць. Подія «вибух» означає, що ціль досягла кінця маршруту у вказаному місці. Пиши українською, 1-3 короткі рядки, 0-2 емодзі, без підпису, без хештегів, без запитань. Пиши як реальні українські тгк про повітряну тривогу: короткі фрази на кшталт «Львів Гучно!!», «Київ УКРИТТЯ!», «На підльоті до міста», «Знижається, усі в укриття!!!», «Дорозвідка» перед відбоєм. Кожне повідомлення має звучати інакше за попередні: не повторюй їхні фрази й будову речень.';
+const KH={new:'нова ціль',enter:'ціль в іншій області',upd:'ціль продовжує рух',hit:'вибух: ціль досягла кінця маршруту',dir:'ціль курсом на місто',near:'ціль на підльоті до міста',clr:'дорозвідка, скоро відбій',off:'відбій тривоги'},FMT=['почни з емодзі','почни з типу цілі','почни з місця','без емодзі на початку','лише один рядок','три короткі рядки','розмовний тон','сухий тон зведення'];
 const GK=CFG.GROQ_KEY||'',GM=CFG.GROQ_MODEL||'llama-3.1-8b-instant';let aiOff=0,aiN=0,aiWarn=0;
 async function ai(f,m,ch){if(!GK||aiN>=3||Date.now()<aiOff)return;aiN++;
  try{const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+GK},body:JSON.stringify({model:GM,temperature:1,max_tokens:140,messages:[{role:'system',content:SYS+' Стиль каналу «'+ch[0]+'»: '+ch[1]+'.'},{role:'user',content:JSON.stringify({подія:KH[f.k],тип:f.t,місце:f.k==='hit'?f.s:f.r,напрямок_приблизно:'на '+f.d,орієнтир:f.c,небезпека:f.z,побажання_до_форми:FMT[Math.random()*FMT.length|0],вже_були_не_повторюй:TG.slice(0,5).map(z=>z.txt.replace(/\n/g,' ').slice(0,100))})}]})});
@@ -455,12 +460,14 @@ async function ai(f,m,ch){if(!GK||aiN>=3||Date.now()<aiOff)return;aiN++;
   const j=await r.json(),tx=(j.choices&&j.choices[0]&&j.choices[0].message.content||'').trim();if(tx){m.txt=tx;m.ai=1;renderTG()}}
  catch(e){aiOff=Date.now()+15000}finally{aiN--}}
 function renderTG(){$('tgk').innerHTML=TG.length?'<div class="th">📡 ТГК <small>(симуляція'+(GK&&aiOff!==Infinity?' · ШІ':'')+')</small></div>'+TG.slice(0,12).map(m=>`<div class="tm"><b>${esc(m.ch)}</b> <small>${m.t}</small><div>${esc(m.txt)}</div></div>`).join(''):'';alVis()}
-function post(f,ch){const m={ch:ch[0],t:tm(),txt:tmpl(f,ch)};TG.unshift(m);if(TG.length>40)TG.pop();renderTG();ai(f,m,ch)}
+const PQ=[];function post(f,ch){PQ.push([f,ch]);if(PQ.length>5)PQ.shift()}setInterval(()=>{const q=PQ.shift();if(q)post1(q[0],q[1])},1300);
+function post1(f,ch){const m={ch:ch[0],t:tm(),txt:tmpl(f,ch)};TG.unshift(m);if(TG.length>40)TG.pop();renderTG();ai(f,m,ch)}
 // про вибух пишуть 2-3 різні канали з невеликою затримкою; канали, що писали щойно, йдуть у кінець черги
-function tgm(x,k){const f=facts(x,k),n=k==='hit'?2+(Math.random()*2|0):1,rec=TG.slice(0,4).map(m=>m.ch),cs=CH.slice().sort((a,b)=>(rec.includes(a[0])-rec.includes(b[0]))||Math.random()-.5).slice(0,n);
- cs.forEach((ch,i)=>i?setTimeout(()=>post(f,ch),1500+Math.random()*7000):post(f,ch));
- if(f.o){const dd=cmp(x.h);logEv(f.o,null,'x',{new:`🛩 ${f.t}: зафіксовано, курс на ${dd}`,enter:`➡️ ${f.t} увійшов в область, курс на ${dd}`,upd:`🔄 ${f.t}: у межах області, курс на ${dd}`,hit:`💥 ${f.t}: вибух — ${f.s}`}[k],'ціль')}}
-setInterval(()=>{obs.forEach(x=>{if(x.sIn>0)return;if(x.ann!==undefined&&x.cp&&dist(x.cp,x.p)<3){x.nt-=scale;if(x.nt<=0){x.nt=900*(0.7+Math.random()*0.6);tgm(x,'upd')}return}x.cp=x.p.slice();const o=obAt(L.latLng(x.p),true),id=o?o.i:-1;
+const TGC={};function tgm(x,k,cn){const f=facts(x,k,cn),n=k==='hit'?2+(Math.random()*2|0):1,rec=TG.slice(0,4).map(m=>m.ch),cs=CH.slice().sort((a,b)=>(rec.includes(a[0])-rec.includes(b[0]))*2-((a[3]&&f.o&&a[3].includes(f.o.n))-(b[3]&&f.o&&b[3].includes(f.o.n)))*3+Math.random()-.5).slice(0,n);
+ const ky=x.t+'|'+(f.o?f.o.i:-1)+'|'+k+'|'+(cn||''),cd=k==='hit'?5000:k==='upd'?40000:20000,ok=!(TGC[ky]&&Date.now()-TGC[ky]<cd);if(ok)TGC[ky]=Date.now();
+ if(ok)cs.forEach((ch,i)=>i?setTimeout(()=>post(f,ch),1500+Math.random()*7000):post(f,ch));
+ if(f.o&&{new:1,enter:1,upd:1,hit:1}[k]){const dd=cmp(x.h);logEv(f.o,null,'x',{new:`🛩 ${f.t}: зафіксовано, курс на ${dd}`,enter:`➡️ ${f.t} увійшов в область, курс на ${dd}`,upd:`🔄 ${f.t}: у межах області, курс на ${dd}`,hit:`💥 ${f.t}: вибух — ${f.s}`}[k],'ціль')}}
+setInterval(()=>{obs.forEach(x=>{if(x.sIn>0)return;if(x.ann!==undefined&&x.cp&&dist(x.cp,x.p)<3){x.nt-=scale;if(x.nt<=0){x.nt=900*(0.7+Math.random()*0.6);tgm(x,'upd')}return}x.cp=x.p.slice();if(obs.length<60){const nc=(q,d,zz)=>{let b=null,bd=d;CT.forEach(c=>{if(c.z<=zz){const m=dist([c.la,c.ln],q);if(m<bd){bd=m;b=c}}});return b},cn=nc(x.p,45,6),cd=nc(along(x,80),22,8);if(cn&&x.nr!==cn.n){x.nr=cn.n;tgm(x,'near',cn.n)}else if(cd&&x.lc!==cd.n){x.lc=cd.n;tgm(x,'dir',cd.n)}}const o=obAt(L.latLng(x.p),true),id=o?o.i:-1;
  if(x.ann===undefined){x.ann=1;x.ob=id;x.nt=900*(0.7+Math.random()*0.6);tgm(x,'new')}
  else if(id!==x.ob){x.ob=id;x.nt=900*(0.7+Math.random()*0.6);if(id>=0)tgm(x,'enter')}
  else{x.nt-=scale;if(x.nt<=0){x.nt=900*(0.7+Math.random()*0.6);tgm(x,'upd')}}})},1000);

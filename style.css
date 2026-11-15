@@ -115,3 +115,39 @@ body.dl #qb{display:none}
  #qb{width:calc(100% - 16px)}#qt{flex:1}
  #dlg{max-height:52vh}
 }
+
+/* --- v4: iPhone / телефон, новини, завантаження, статистика --- */
+html{-webkit-text-size-adjust:100%;height:100%}body{height:100dvh;overscroll-behavior:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+#map{-webkit-user-select:none;user-select:none;touch-action:none}
+header{padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right))}
+#panel,#tp,#st,#al{-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+@media(pointer:coarse){input,select,textarea{font-size:16px}}
+@media(max-width:700px){#panel{padding-bottom:calc(10px + env(safe-area-inset-bottom))}.modal{bottom:calc(10px + env(safe-area-inset-bottom))}header button{padding:6px 8px}}
+/* завантаження */
+#ld{position:fixed;inset:0;z-index:5000;background:#000;display:flex;align-items:center;justify-content:center;transition:opacity .7s ease,visibility .7s}
+#ld.out{opacity:0;visibility:hidden}
+#ldm{position:absolute;inset:6%;background:url(drones/black_ukraine_map.svg) center/contain no-repeat;opacity:.5;filter:hue-rotate(140deg) saturate(3) brightness(1.3) drop-shadow(0 0 14px #ff3b3b88);animation:ldp 2.4s ease-in-out infinite}
+@keyframes ldp{50%{opacity:.22;filter:hue-rotate(140deg) saturate(3) brightness(.9) drop-shadow(0 0 4px #ff3b3b55)}}
+.ldc{position:relative;text-align:center;padding:0 24px;max-width:420px}.ldi{width:46px;height:46px;animation:ldf 2s ease-in-out infinite}
+@keyframes ldf{50%{transform:translateY(-8px) rotate(6deg)}}
+#ldt{margin:14px 0 12px;font-weight:600;color:#fff;text-shadow:0 0 8px #000}.ldp{height:4px;background:#ffffff22;border-radius:4px;overflow:hidden}
+#ldb{display:block;height:100%;width:0;background:linear-gradient(90deg,#ff3b3b,#ffc400);transition:width .35s ease}
+/* новини (ТГК) */
+#al{position:fixed;z-index:840;left:10px;top:calc(var(--h) + 58px);width:300px;max-height:55vh;padding:0;overflow:hidden;display:flex;flex-direction:column;background:#10141ce6;border-radius:12px;transition:max-height .3s ease,transform .25s ease}
+#alh{padding:6px 10px;margin:0;border-bottom:1px solid var(--l);max-height:90px;overflow:auto}
+#tgk{overflow:auto;padding:0 8px 6px}.th{display:flex;justify-content:space-between;align-items:center;cursor:pointer;padding:6px 2px;border:0!important;margin:0}
+.th .bd{background:#e53935;color:#fff;border-radius:10px;padding:0 6px;font-size:11px;margin-left:6px}
+.tm{animation:tin .35s ease both}.tm .tt{font-size:10px;opacity:.6}.tm div{font-size:13px;line-height:1.35}
+@keyframes tin{from{opacity:0;transform:translateY(-6px)}}
+#al:not(.open) #alh{display:none}#al:not(.open) .tm:not(:first-of-type){display:none}
+#al:not(.open) .tm div{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+@media(max-width:700px){#al{left:8px;right:84px;width:auto;top:calc(var(--h) + 8px)}#al.open{right:8px;max-height:52vh;z-index:870}}
+/* статистика */
+#st{position:fixed;z-index:910;top:calc(var(--h) + 46px);right:10px;width:350px;max-height:calc(100% - var(--h) - 60px);overflow:auto;background:var(--p);border:1px solid var(--l);border-radius:12px;padding:8px 10px;box-shadow:0 8px 28px #000a;animation:tin .3s ease}
+#st .ctl{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:6px 0}#st input[type=range]{width:100%;padding:0}
+#st .tl2{font:600 15px ui-monospace,monospace;color:#ffc400}.cards{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0}
+.cards div{background:#252d42;border-radius:8px;padding:6px 8px;font-size:11px}.cards b{display:block;font-size:17px}
+.bar{display:flex;align-items:center;gap:6px;font-size:12px;margin:3px 0}.bar span:first-child{width:92px;flex:none}.bar i{display:block;height:8px;border-radius:4px;background:var(--c,#6ec1ff);transition:width .5s}
+.fl{display:grid;grid-template-columns:20px 1fr auto;gap:2px 6px;padding:6px 4px;border-bottom:1px solid var(--l);cursor:pointer;font-size:12px;border-radius:6px}.fl:hover,.fl.on{background:#34405c}.fl small{opacity:.7}
+body.rp .ob{opacity:.15}
+@media(max-width:700px){#st{top:auto;left:0;right:0;bottom:0;width:auto;max-height:46vh;border-radius:14px 14px 0 0;padding-bottom:calc(10px + env(safe-area-inset-bottom))}body.rp #qb{display:none}}

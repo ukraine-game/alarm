@@ -1,14 +1,18 @@
 <!DOCTYPE html>
 <html lang="uk"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Мапа тривог">
+<meta name="theme-color" content="#10141c"><meta name="format-detection" content="telephone=no">
 <title>Мапа тривог — симулятор</title>
 <link rel="icon" href="img/favicon.ico" sizes="any">
 <link rel="shortcut icon" href="img/favicon.ico">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
 <link rel="stylesheet" href="style.css">
 </head><body>
+<div id="ld"><div id="ldm"></div><div class="ldc"><img src="drones/ic_shahed.svg" alt="" class="ldi"><div id="ldt">Зачекайте, триває завантаження ресурсів…</div><div class="ldp"><i id="ldb"></i></div></div></div>
 <header><b>🇺🇦 Мапа тривог</b><span class="tag">СИМУЛЯТОР<span class="w"> · не реальні дані</span></span>
-<span id="cnt"></span><span class="sp"></span><button id="ua" title="Приховати сусідні країни">🇺🇦<span class="w"> Лише Україна</span></button><button id="snd" title="Звук сирени">🔕</button><select id="spd" title="Швидкість часу"></select><button id="adm">🛠 Адмін</button></header>
+<span id="cnt"></span><span class="sp"></span><button id="ua" title="Приховати сусідні країни">🇺🇦<span class="w"> Лише Україна</span></button><button id="stb" title="Статистика та перемотування">📊<span class="w"> Статистика</span></button><button id="snd" title="Звук сирени">🔕</button><select id="spd" title="Швидкість часу"></select><button id="adm">🛠 Адмін</button></header>
 <div id="map"></div>
 <div id="thr" title="Загрози — натисніть: де тривога, рівень, тривалість"><span class="tt">Загрози:</span><img src="img/icon_air.svg" alt="" class="ti"><b id="tn">0</b></div>
 <div id="tp" hidden><div class="tph"><b>🚨 Загрози й тривоги</b><button id="tpx">✖</button></div><div id="tl"></div><div class="th2">Де тривога <small>(торкніться рядка — підсвітити загрози та їхній шлях)</small></div><div id="tpl"></div></div>
@@ -22,6 +26,7 @@
 <small>Оберіть колір і клікайте чи водіть пальцем/мишею. «Райони» — тривога лише в районі, «Цілі області» — в усій області.</small>
 <h4>Об'єкти</h4><div id="ob"></div><h4>Області та райони</h4><input id="fq" placeholder="🔎 Пошук області чи району" style="width:100%"><div id="ol"></div>
 </aside>
+<aside id="st" hidden><div class="tph"><b>📊 Статистика</b><button id="stx">✖</button></div><div id="sbody"></div></aside>
 <div id="cr"></div>
 <div id="menu" hidden>➕ Створити об'єкт</div>
 <div id="hint" hidden><span id="ht"></span><button id="hc">✖</button></div>
@@ -38,4 +43,5 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
 <script src="config.js"></script>
 <script src="script.js"></script>
+<script src="extra.js"></script>
 </body></html>
