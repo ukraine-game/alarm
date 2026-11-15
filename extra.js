@@ -2,13 +2,13 @@
 // ===== v4: міста, ТГК-стрічка, статистика-перемотка, екран завантаження =====
 
 // ---- v4.4: підписи населених пунктів — свої + підвантаження з OpenStreetMap (Overpass) для поточного екрана
-const PTD=new Map(),OV=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://overpass.private.coffee/api/interpreter'],PK={city:7,town:9,village:11,hamlet:12.5},PQ2=[],PBAD=new Map(),PINF=new Set();let ovI=0,ovBusy=0,CTL=-1,CTN=new Map(),plSv=0,plT=0;
+const PTD=new Map(),OV=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://overpass.private.coffee/api/interpreter'],PK={city:7,town:9,village:10.5,hamlet:12},PQ2=[],PBAD=new Map(),PINF=new Set();let ovI=0,ovBusy=0,CTL=-1,CTN=new Map(),plSv=0,plT=0;
 try{(JSON.parse(localStorage.getItem('alarmpl1')||'[]')).forEach(([k,a])=>PTD.set(k,a))}catch(x){}
-const plTier=z=>z>=12?['b',.25,1,1]:z>=11?['v',.5,1,0]:['a',.5,0,0];
-function plSave(){clearTimeout(plSv);plSv=setTimeout(()=>{try{localStorage.setItem('alarmpl1',JSON.stringify([...PTD].slice(-120)))}catch(x){}},3000)}
-async function ovFetch(q){for(let t=0;t<OV.length;t++){const u=OV[(ovI+t)%OV.length],c=new AbortController(),to=setTimeout(()=>c.abort(),15000);try{const r=await fetch(u+'?data='+encodeURIComponent(q),{signal:c.signal});clearTimeout(to);if(!r.ok)throw 0;const j=await r.json();ovI=(ovI+t)%OV.length;return j.elements||[]}catch(x){clearTimeout(to)}}return null}
-async function plPump(){while(ovBusy<2&&PQ2.length){const j=PQ2.shift();ovBusy++;(async()=>{const ty=['city','town'].concat(j.v?['village']:[],j.h?['hamlet']:[]).join('|'),
- r=await ovFetch(`[out:json][timeout:20];node["place"~"^(${ty})$"](${j.s},${j.w},${j.n},${j.e});out 700;`);PINF.delete(j.k);
+const plTier=z=>z>=12?['b',.25,1,1]:z>=10.5?['v',.5,1,0]:['a',.5,0,0];
+function plSave(){clearTimeout(plSv);plSv=setTimeout(()=>{let n=260;const a=[...PTD];while(n>=30){try{localStorage.setItem('alarmpl1',JSON.stringify(a.slice(-n)));return}catch(x){n=n>>1}}},3000)}
+async function ovFetch(q){for(let t=0;t<OV.length;t++){const u=OV[(ovI+t)%OV.length],c=new AbortController(),to=setTimeout(()=>c.abort(),25000);try{const r=await fetch(u+'?data='+encodeURIComponent(q),{signal:c.signal});clearTimeout(to);if(!r.ok)throw 0;const j=await r.json();ovI=(ovI+t)%OV.length;return j.elements||[]}catch(x){clearTimeout(to)}}return null}
+async function plPump(){while(ovBusy<(MOB?2:3)&&PQ2.length){const j=PQ2.shift();ovBusy++;(async()=>{const ty=['city','town'].concat(j.v?['village']:[],j.h?['hamlet']:[]).join('|'),
+ r=await ovFetch(`[out:json][timeout:30];node["place"~"^(${ty})$"](${j.s},${j.w},${j.n},${j.e});out 1800;`);PINF.delete(j.k);
  if(r){PTD.set(j.k,r.filter(p=>p.tags&&(p.tags['name:uk']||p.tags.name)).map(p=>[p.tags['name:uk']||p.tags.name,+p.lat.toFixed(4),+p.lon.toFixed(4),PK[p.tags.place]||12.5]));plSave();lab()}else PBAD.set(j.k,Date.now());ovBusy--;plPump()})()}}
 function plLoad(){if(document.hidden)return;const z=map.getZoom();if(z<9)return;const[pre,sz,v,h]=plTier(z),B=map.getBounds().pad(.1);let n=0;
  for(let i=Math.floor(B.getSouth()/sz);i<=Math.floor(B.getNorth()/sz)&&n<8;i++)for(let k=Math.floor(B.getWest()/sz);k<=Math.floor(B.getEast()/sz)&&n<8;k++){const key=pre+':'+i+':'+k;
@@ -19,7 +19,7 @@ function lab(){CL.clearLayers();const z=map.getZoom(),B=map.getBounds().pad(.2),
  CT.forEach(c=>{if(z>=c.z&&B.contains([c.la,c.ln]))P.push(c)});
  if(z>=9){const[pre,sz]=plTier(z);for(let i=Math.floor(B.getSouth()/sz);i<=Math.floor(B.getNorth()/sz);i++)for(let k=Math.floor(B.getWest()/sz);k<=Math.floor(B.getEast()/sz);k++){const a=PTD.get(pre+':'+i+':'+k);
   if(a)a.forEach(p=>{if(z>=p[3]&&B.contains([p[1],p[2]])){const d=CTN.get(p[0]);if(!d||!d.some(c=>Math.abs(c.la-p[1])<.1&&Math.abs(c.ln-p[2])<.15))P.push({n:p[0],la:p[1],ln:p[2],z:p[3]})}})}}
- P.sort((a,b)=>a.z-b.z);const placed=[],lim=MOB?60:140;let cc=0;
+ P.sort((a,b)=>a.z-b.z);const placed=[],lim=MOB?80:220;let cc=0;
  for(const c of P){if(cc>=lim)break;const pt=map.latLngToContainerPoint([c.la,c.ln]),w=c.n.length*6.5+8,r=[pt.x-w/2,pt.y-8,pt.x+w/2,pt.y+8];
   if(placed.some(q=>r[0]<q[2]&&r[2]>q[0]&&r[1]<q[3]&&r[3]>q[1]))continue;placed.push(r);cc++;
   L.marker([c.la,c.ln],{interactive:false,keyboard:false,zIndexOffset:-500,icon:L.divIcon({className:'',iconSize:[0,0],html:`<span class="cl${c.z>=11?' sm':''}">${esc(c.n)}</span>`})}).addTo(CL)}}

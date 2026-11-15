@@ -1,1 +1,1 @@
-{"name":"Мапа тривог — симулятор","short_name":"Мапа тривог","start_url":"./index.html","display":"standalone","background_color":"#000000","theme_color":"#10141c","icons":[{"src":"img/apple-touch-icon.png","sizes":"180x180","type":"image/png"}]}
+{"name":"Мапа тривог — симулятор","short_name":"Мапа тривог","start_url":"./index.html","display":"standalone","orientation":"any","scope":"./","background_color":"#000000","theme_color":"#10141c","icons":[{"src":"img/apple-touch-icon.png","sizes":"180x180","type":"image/png"}]}

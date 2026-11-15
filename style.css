@@ -181,3 +181,43 @@ body{position:fixed;inset:0;width:100%}
 
 /* --- v4.4 --- */
 .cl.sm{font-size:11px;font-weight:500;opacity:.92}
+
+/* --- v5: автозапуск, міномет --- */
+#aud{margin:8px 0}#aud summary{font-weight:700}#aud .row{margin-top:6px}#aud small{display:block;margin-top:6px;opacity:.75}
+#aub.on{background:#c62828;border-color:#e53935}#aud1 button.on{background:#1565c0}
+.mt{position:relative;width:26px;height:26px;pointer-events:none}
+.mt i{position:absolute;left:11px;top:2px;width:5px;height:16px;background:#8d99ae;border:1px solid #000;border-radius:2px;transform:rotate(var(--a,20deg));transform-origin:50% 90%}
+.mt b{position:absolute;left:5px;top:17px;width:17px;height:6px;background:#5c677d;border:1px solid #000;border-radius:3px}
+.mt.f::after{content:'';position:absolute;left:7px;top:-7px;width:13px;height:13px;border-radius:50%;background:radial-gradient(#fff,#ffb300 50%,transparent 72%);animation:mf .22s ease-out forwards}
+@keyframes mf{from{transform:scale(.4);opacity:1}to{transform:scale(1.7);opacity:0}}
+
+/* --- v5.1: телефон, адмін-режим без панелі, компактний діалог, iOS --- */
+body.adm:not(.pnl) #thr,body.adm:not(.pnl) #tp{right:10px}
+#adm.pn{box-shadow:0 0 0 2px #fff9}
+header,#qb,.lg,#thr,#al .th{-webkit-user-select:none;user-select:none}
+html{touch-action:manipulation}
+#dgx{display:none;position:absolute;top:6px;right:8px;padding:2px 10px;min-height:34px}
+@media(max-width:700px){
+ body.adm #qb{bottom:calc(10px + env(safe-area-inset-bottom))}body.adm #hint{bottom:calc(74px + env(safe-area-inset-bottom))}
+ body.pnl #qb{bottom:calc(46vh + 8px)}body.pnl #hint{bottom:calc(46vh + 74px)}
+ #cr{display:none}
+}
+@media(max-width:700px),(pointer:coarse){
+ #dlg{padding:8px 10px;max-height:none;overflow:visible}#dlg h4{margin:0 44px 2px 0;font-size:13px}
+ #dlg:not(.ex)>label,#dlg:not(.ex)>small:not(#info),#dlg:not(.ex) #fgr,#dlg:not(.ex) #pk{display:none}
+ #dlg #info{display:block;margin-top:2px}
+ #dlg .row{margin-top:6px;flex-wrap:nowrap}#dlg .row button{flex:1;padding:6px 4px;min-height:44px;font-size:13px}
+ #dlg.ex{max-height:60vh;overflow:auto}#dlg.ex .row{flex-wrap:wrap}#dgx{display:block}
+}
+@media(pointer:coarse){
+ button,select{min-height:44px}header button,header select{min-height:40px}
+ .leaflet-marker-icon,.leaflet-marker-shadow{will-change:auto}
+ #panel .r button{min-height:36px;padding:3px 10px}
+}
+@media(pointer:coarse) and (min-width:701px){body.pnl #qb{left:calc(50% - 160px)}body.pnl #hint{left:calc(50% - 160px)}}
+@media(pointer:coarse) and (max-height:500px) and (max-width:700px){
+ :root{--h:calc(42px + env(safe-area-inset-top))}
+ #panel{top:var(--h);left:auto;right:0;bottom:0;width:min(330px,46vw);height:auto;border-radius:0;border-top:0;border-left:1px solid var(--l)}
+ body.pnl #qb{bottom:calc(10px + env(safe-area-inset-bottom));left:calc(50% - min(330px,46vw)/2);max-width:calc(100% - min(330px,46vw) - 16px)}
+ body.pnl #hint{bottom:calc(74px + env(safe-area-inset-bottom))}#al{max-height:36vh}#dlg{width:min(420px,52vw)}
+}
