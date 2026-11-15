@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="uk"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Мапа тривог — симулятор</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<link rel="stylesheet" href="style.css">
+</head><body>
+<header><b>🇺🇦 Мапа тривог</b><span class="tag">СИМУЛЯТОР<span class="w"> · не реальні дані</span></span>
+<span id="cnt"></span><span class="sp"></span><button id="snd" title="Звук сирени">🔕</button><select id="spd" title="Швидкість часу"></select><button id="adm">🛠 Адмін</button></header>
+<div id="map"></div>
+<div id="al" hidden></div>
+<aside id="panel" hidden>
+<div class="row"><button data-a="clr">🟢 Відбій усім</button><button data-a="del">🗑 Очистити об'єкти</button></div>
+<p><small>ПКМ по карті (на телефоні — довге натискання) → «Створити об'єкт». Клік по області — тривога. Клік по об'єкту — змінити курс.</small></p>
+<h4>🖌 Швидке фарбування районів</h4><div class="row" id="br"><button data-b="2">🔴</button><button data-b="1">🟡</button><button data-b="0">🟢</button><button data-b="x">✋ Вимкнути</button></div>
+<small>Оберіть колір і клікайте чи водіть пальцем/мишею по районах.</small>
+<h4>Об'єкти</h4><div id="ob"></div><h4>Області</h4><div id="ol"></div>
+</aside>
+<div id="lock" class="modal" hidden><h4>🔒 Доступ до даних</h4><label id="ll">Код доступу<input id="li" type="password" autocomplete="off"></label><small id="lm"></small><div class="row"><button id="lb" class="go">Увійти</button></div></div>
+<div id="cr"></div>
+<div id="menu" hidden>➕ Створити об'єкт</div>
+<div id="hint" hidden><span id="ht"></span><button id="hc">✖</button></div>
+<div id="dlg" class="modal" hidden>
+<h4>Створити об'єкт</h4>
+<label>Тип<select id="t"></select></label>
+<label>Напрямок (азимут °: 0 — північ, 90 — схід)<input id="az" type="number" min="0" max="360" value="0"><input id="azr" type="range" min="0" max="359" value="0"></label>
+<label>Тривалість польоту (хв)<input id="du" type="number" min="1" value="40"></label>
+<label>Старт через (хв, 0 — одразу)<input id="st" type="number" min="0" value="0"></label>
+<small id="info"></small>
+<div class="row"><button id="pk">🎯 Вказати ціль</button><button id="ok" class="go">Запустити</button><button id="no">Скасувати</button></div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="config.js"></script>
+<script src="script.js"></script>
+</body></html>
